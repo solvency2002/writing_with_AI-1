@@ -1,0 +1,20 @@
+# pandoc 出力 (draft.docx は完成見本として残す)
+demo/output/*
+!demo/output/draft.docx
+
+# OS / エディタ
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# 一時ファイル
+*.tmp
+*.bak
+~$*
+
+# Python / R 一時
+__pycache__/
+.Rhistory
+.RData
+.Rproj.user/
