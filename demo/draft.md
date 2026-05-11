@@ -20,6 +20,8 @@ The draft is written in Markdown. References are stored in `refs.bib`, and citat
 
 ![Figure 1. Workflow for writing with AI.](assets/figure1.png)
 
+
+
 The workflow has four steps:
 
 1. Write or paste a rough draft into `draft.md`.
@@ -30,6 +32,8 @@ The workflow has four steps:
 # Results
 
 The main output is a Word document generated from the Markdown file. The generated document should be checked manually, especially citation placement, figure captions, and any claim about study design or interpretation.
+
+# ここに　demo\assets\study_flow.drawio　からpngにして追加して
 
 # Discussion
 
