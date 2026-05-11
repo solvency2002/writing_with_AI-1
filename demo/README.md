@@ -6,7 +6,7 @@
 
 1. この `demo/` フォルダをIDEで開く
 2. `draft.md` を開く
-3. `../prompts/writing_prompts.md` のプロンプトを使ってAIに部分修正を依頼する
+3. ルートの `README.md`「コピペ用プロンプト集」のプロンプトを使ってAIに部分修正を依頼する
 4. pandocでWordファイルを作る
 
 ```powershell
