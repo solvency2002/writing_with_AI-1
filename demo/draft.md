@@ -20,8 +20,6 @@ The draft is written in Markdown. References are stored in `refs.bib`, and citat
 
 ![Figure 1. Workflow for writing with AI.](assets/figure1.png)
 
-
-
 The workflow has four steps:
 
 1. Write or paste a rough draft into `draft.md`.
