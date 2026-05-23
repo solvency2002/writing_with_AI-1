@@ -13,6 +13,9 @@ Thumbs.db
 *.bak
 ~$*
 
+# ローカル作業メモ
+task_list.md
+
 # Python / R 一時
 __pycache__/
 .Rhistory
