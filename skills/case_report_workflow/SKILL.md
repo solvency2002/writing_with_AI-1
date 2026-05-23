@@ -109,7 +109,7 @@ workflow:
 | 7 | bottom_line_message | pending / done / skipped | <BLM finalized? yes/no> |
 | 8 | submission_guidelines_check (extract) | pending / done / skipped | <rule count + constraint block written> |
 | 9 | draft generated | pending / done / skipped | <draft.md path; TODO count> |
-| 10 | peer_review_simulator + care_check | pending / done / skipped | <Major comment count, CARE missing items> |
+| 10 | peer_review_simulator + care_check + proofread-manuscript | pending / done / skipped | <Major comment count, CARE missing items, em-dash + long-sentence counts> |
 | 11 | revision applied | pending / done / skipped | <revision diff summary> |
 | 12 | submission_guidelines_check (compare) | pending / done / skipped | <fail/unclear count after revision> |
 | 13 | citation_verify (final) | pending / done / skipped | <counts> |
@@ -296,19 +296,31 @@ Drafting rules:
   insert `[TODO: author to confirm <field>]` instead of inventing a
   value. Do not paraphrase numerically (e.g., "around 40%" when the
   ledger says "42%").
+- **Style discipline** (English drafts only): before writing, read
+  [`style_discipline.md`](style_discipline.md). The canonical rules are
+  (a) no em-dash in prose, (b) ≤ 25 words per sentence by default with a
+  hard ceiling of 40 words, (c) active voice for clinical-team actions
+  and family decisions (passive acceptable for measurements / lab
+  values), (d) topic sentence first in every paragraph, (e) banned
+  terms (`significant`, `demonstrated`, `caused / led to / contributed
+  to / impacted / resulted in / affected` in observational contexts,
+  `clearly`, `obviously`, `however,` at sentence start), and (f)
+  References list uses `Author. Year. Journal.` format (no em-dash
+  separator). The full table of replacements lives in the style file —
+  consult it, do not paraphrase from memory.
 - Use the structure mandated by Step 8's SG2 rule (or CARE 2013 ordering
   if no journal-specific rule was extracted).
 - Cite only `@pmid<PMID>` keys that exist in `refs.bib`. Grep `refs.bib`
-  before each citation; if a key is absent, do not invent it — instead
+  before each citation; if a key is absent, do not invent it. Instead
   insert a `[TODO: similar_cases_search for <topic>]` placeholder.
 - Use English for body text (workshop default; ask the author if Japanese
-  is wanted).
+  is wanted). The style discipline above applies to English only.
 - Keep the draft at the journal's word limits.
 - If SG5 required a consent statement, add a "Patient Consent" subsection
   with the **TODO placeholder**, not a hard-coded sentence:
-  `[TODO: confirm written informed consent for publication and any accompanying images — replace with the author-confirmed wording]`
+  `[TODO: confirm written informed consent for publication and any accompanying images, replace with the author-confirmed wording]`
   Do **not** write "Written informed consent was obtained ..." as a
-  filler — that would be a false statement until the author confirms.
+  filler. That would be a false statement until the author confirms.
 - Add an "AI Disclosure" subsection if SG11 required it (placeholder
   text describing the AI tools actually used in the workflow; the author
   edits before submission).
@@ -316,16 +328,41 @@ Drafting rules:
 Write the file via `Write` (new file) only. If `draft.md` already exists,
 refuse to overwrite (the workflow would have skipped to Step 10).
 
-At the end of Step 9, count `[TODO: ...]` placeholders in the draft and
-surface the count in the state block. Anything > 0 is a flag for Step 11
-revision (and a hard blocker at Step 14).
+At the end of Step 9, run the **style self-check** from
+[`style_discipline.md`](style_discipline.md):
 
-### Step 10 — Peer review + CARE
+1. `grep -c '—' draft.md` must return `0`.
+2. Long-sentence ratio (sentences > 25 words / total sentences) ≤ 15 %.
+3. No prose sentence > 40 words (quotations and lab-value lists
+   excluded).
+4. Banned-term grep returns `0` for each of `significant`,
+   `demonstrated`, `caused`, `led to`, `contributed to`, `clearly`,
+   `obviously`, `^[Hh]owever,`.
 
-Invoke `peer_review_simulator` and `care_check` in parallel (they read
-the same `draft.md` and produce independent reports). Confirm the
-article type for `peer_review_simulator` (single_case / surgical_case /
-etc.) before invoking.
+If any check fails, fix the violations before emitting the draft.
+
+At the end of Step 9, also count `[TODO: ...]` placeholders in the draft
+and surface both counts (TODO + style-self-check results) in the state
+block. Anything > 0 on TODOs is a flag for Step 11 revision (and a hard
+blocker at Step 14). Anything > 0 on the style self-check must be
+resolved before emitting the draft.
+
+### Step 10 — Peer review + CARE + Proofread
+
+Invoke `peer_review_simulator`, `care_check`, and `proofread-manuscript`
+in parallel (all three read the same `draft.md` and produce independent
+reports). Confirm the article type for `peer_review_simulator`
+(single_case / surgical_case / etc.) before invoking.
+
+The three skills cover non-overlapping concerns by design:
+
+- `peer_review_simulator` — clinical plausibility, novelty, ethics,
+  discussion-literature review (non-CARE).
+- `care_check` — CARE 2013 structural completeness (C1–C13).
+- `proofread-manuscript` — English prose style: em-dash, sentence
+  length, active voice, banned terms (the rules from
+  [`style_discipline.md`](style_discipline.md)). Pass the file as
+  English; skip this invocation if the draft is in Japanese.
 
 If the confirmed article type is not `single_case`, ensure the
 "Article-type scope" warning is in the workflow state and **treat every
@@ -334,7 +371,7 @@ Major punch-list item that cannot be auto-dismissed** (the author can
 still dismiss with explicit one-line reason, but the default disposition
 is "accept").
 
-Aggregate the two reports into a single revision punch-list:
+Aggregate the three reports into a single revision punch-list:
 
 - CARE-shaped items (missing checklist elements) → from `care_check`.
 - Reviewer-shaped items (Major / Minor / Confidential) → from
@@ -342,20 +379,28 @@ Aggregate the two reports into a single revision punch-list:
 - Article-type framework gaps (SCARE for surgical_case, STROBE / case-
   series framework for case_series) → from `peer_review_simulator`,
   surfaced as Major.
+- Style items (em-dash, > 25-word sentences, banned terms, passive
+  voice for clinical-team actions) → from `proofread-manuscript`,
+  surfaced as **Style** (default disposition: `auto-apply` in Step 11
+  because they do not touch clinical facts; the author may opt-out per
+  item).
 
-De-duplicate where they overlap (e.g., both may flag a missing consent
-statement — keep one entry, attribute to both skills).
+De-duplicate where they overlap (e.g., both `care_check` and
+`peer_review_simulator` may flag a missing consent statement — keep one
+entry, attribute to both skills).
 
 Surface the merged punch-list and ask the author which items to accept
 for the Step 11 revision. The author may dismiss items they disagree
 with — record dismissals in the workflow state with a one-line reason.
+Style items default to accept and need no per-item confirmation unless
+the author explicitly opts out of a specific edit.
 
 ### Step 11 — Revision applied
 
 This is the **second** step where the orchestrator writes to `draft.md`.
 
 For each accepted punch-list item, apply the smallest targeted edit that
-resolves the item — typically `Edit` calls scoped to a single paragraph
+resolves the item, typically `Edit` calls scoped to a single paragraph
 or section. Rules:
 
 - One edit per item (preserves traceability).
@@ -373,9 +418,18 @@ or section. Rules:
   rewording must remove the overstated claim **without** asking AI to
   generate new clinical content beyond the literature already in
   `refs.bib`.
+- **Style items from `proofread-manuscript` are auto-applied** (em-dash
+  replacement, sentence splitting, active-voice conversion, banned-term
+  replacement). These edits do not touch numerical clinical facts,
+  drug names, dates, or day numbering, so the ledger-discipline
+  invariant is preserved. Verify by running the
+  [`style_discipline.md`](style_discipline.md) self-check after the
+  edits: em-dash count `0`, long-sentence ratio ≤ 15 %, no banned-term
+  hits.
 
 When revision is complete, surface a diff summary (touched sections,
-sentence-count change per section) in the workflow state.
+sentence-count change per section, em-dash count, long-sentence ratio
+before / after) in the workflow state.
 
 ### Step 12 — Submission guidelines check (compare against revised draft)
 
@@ -457,12 +511,17 @@ the workflow is complete.
    uses it to navigate; do not bury it.
 9. **CARE audit lives in `care_check`, not here.** Step 10 invokes it;
    do not embed CARE logic in this orchestrator.
-10. **Skips are explicit and recorded.** `skipped` ≠ `done` in the state
+10. **Style discipline lives in [`style_discipline.md`](style_discipline.md).**
+    Step 9 reads it, Step 10 verifies via `proofread-manuscript`, Step
+    11 auto-applies the punch-list. Do not duplicate the style rules in
+    procedure text; update the canonical file and let the layers
+    inherit.
+11. **Skips are explicit and recorded.** `skipped` ≠ `done` in the state
     block.
-11. **Article-type scope warning is mandatory** when article type ≠
-    `single_case` — at the top of every reply, and re-stated in the
+12. **Article-type scope warning is mandatory** when article type ≠
+    `single_case`, at the top of every reply, and re-stated in the
     hand-off.
-12. **Hand-off requires zero `[TODO: ...]` in `draft.md`.** Step 14
+13. **Hand-off requires zero `[TODO: ...]` in `draft.md`.** Step 14
     refuses otherwise.
 
 ## Output format
@@ -513,7 +572,11 @@ For intermediate messages during the workflow, surface:
 8. Are there **zero** `[TODO: ...]` placeholders remaining in `draft.md`?
 9. Did Step 12 (SG compare) return clean, or was it explicitly skipped
    because no journal target was set?
-10. If article type ≠ `single_case`, is the scope warning present in
+10. (English drafts only) Does `draft.md` pass the
+    [`style_discipline.md`](style_discipline.md) self-check, i.e.,
+    `grep -c '—'` returns `0`, long-sentence ratio ≤ 15 %, no banned
+    terms?
+11. If article type ≠ `single_case`, is the scope warning present in
     both the state block and the hand-off package?
 
 ## Testing this skill
@@ -562,9 +625,15 @@ In invocation order:
 6. [submission_guidelines_check](../submission_guidelines_check/SKILL.md), `extract_only` mode — Step 8
 7. (Step 9 = draft generation, no sub-skill)
 8. [peer_review_simulator](../peer_review_simulator/SKILL.md) +
-   [care_check](../care_check/SKILL.md) (parallel) — Step 10
+   [care_check](../care_check/SKILL.md) +
+   `proofread-manuscript` (parallel) — Step 10. `proofread-manuscript`
+   is a user-level skill (lives in `~/.claude/skills/proofread-manuscript/`,
+   not in this repo); invoke via the `Skill` tool. Skip it for
+   Japanese-language drafts.
 9. (Step 11 = revision, no sub-skill; may re-invoke
-   `similar_cases_search` if Major comments require new literature)
+   `similar_cases_search` if Major comments require new literature.
+   Auto-applies `proofread-manuscript`'s style punch-list per
+   [`style_discipline.md`](style_discipline.md).)
 10. [submission_guidelines_check](../submission_guidelines_check/SKILL.md), `compare` mode — Step 12
 11. [citation_verify](../citation_verify/SKILL.md) (re-invoked) — Step 13
 12. [case_timeline](../case_timeline/SKILL.md) — optional, on author
