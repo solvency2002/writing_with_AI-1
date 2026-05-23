@@ -5,10 +5,10 @@ description: |
   Search PubMed for case reports similar to the user's case and emit grounded
   BibTeX entries the author can paste into refs.bib. The skill never invents
   citation metadata: every field in the output BibTeX is sourced from the
-  PubMed efetch XML for an explicit PMID. After candidates are written, the
-  skill runs citeguard (citation-checker) on the resulting refs.bib to verify
-  that each entry resolves cleanly. Use this for the "find me 5 similar case
-  reports for my draft" task in case-report drafting.
+  PubMed efetch XML for an explicit PMID. After candidates are appended, this
+  skill delegates verification to the `citation_verify` skill (which runs
+  citeguard) instead of running the citation checker itself. Use this for the
+  "find me 5 similar case reports for my draft" task in case-report drafting.
 allowed-tools:
   - Read
   - Write
@@ -181,31 +181,33 @@ Example block to append:
 }
 ```
 
-### 6. Verify with citeguard
+### 6. Verify by delegating to `citation_verify`
 
-After writing, run citation-checker on the updated `refs.bib`. This is the
-final guardrail against any error in BibTeX assembly:
+After appending, do **not** run citeguard from this skill. Hand off to the
+`citation_verify` skill instead, passing:
 
-```bash
-# Install once per machine
-pip install citeguard
+- the `refs.bib` path that was just modified,
+- the email collected in step 2 (NCBI contact),
+- the list of citation keys just appended (so `citation_verify` can scope its
+  surfaced findings to the new entries — the report on disk still covers the
+  whole file).
 
-# Verify
-citeguard --input-file demo/refs.bib --out /tmp/citation_report.md --all --email "$EMAIL"
-```
+`citation_verify` is responsible for:
 
-Read `/tmp/citation_report.md` and surface any entries categorized as:
+- installing / locating `citeguard`,
+- running it with `--all --email`,
+- categorizing each entry as `found` / `likely_wrong` / `not_found` /
+  `retraction`,
+- emitting a structured summary block.
 
-- `likely_wrong` — title/author/year mismatch vs. Crossref/PubMed. **Report to
-  the user with the candidate metadata diff.** Do not silently fix; the author
-  decides.
-- `not_found` — no candidate located. Probable cause: typo'd DOI, withdrawn
-  record, or the BibTeX assembly grabbed the wrong XML element. Re-fetch from
-  PubMed by PMID to re-check.
-- `retraction` — retracted publication. Flag prominently; the author should
-  decide whether to drop or cite-as-retracted.
+This skill's job in step 6 is to **read `citation_verify`'s summary back into
+its own final message** so the caller sees the verification result inline.
+Do not re-categorize or override `citation_verify`'s verdict.
 
-Entries categorized as `found` are silent successes.
+If `citation_verify` reports any `likely_wrong` / `not_found` / `retraction`
+entries among the keys just appended, surface them prominently — they
+represent BibTeX-assembly errors or upstream PubMed data issues that the
+author needs to act on. `found`-only outcomes are silent successes.
 
 ## Rules (must follow)
 
@@ -218,9 +220,10 @@ Entries categorized as `found` are silent successes.
    relax only if the user explicitly asks.
 5. **Surface the query to the user before executing.** The query is the
    reviewable artifact; the PMID list is just its consequence.
-6. **Surface the citeguard report.** Do not declare success until you have
-   read the report and at minimum reported the count of `likely_wrong` /
-   `not_found` entries.
+6. **Surface the `citation_verify` summary.** Do not declare success until
+   `citation_verify` has run and you have transcribed at minimum the counts
+   line (and the `likely_wrong` / `not_found` / `retraction` tables when
+   non-zero) into this skill's final message.
 7. **Never edit `draft.md` from this skill.** This skill only adds to
    `refs.bib`. The author decides where in the manuscript to cite each entry.
 
@@ -232,8 +235,9 @@ The final assistant message must contain, in this order:
 2. The candidates table (from step 4).
 3. The list of PMIDs the user approved.
 4. The BibTeX block appended to `refs.bib` (for copy-paste audit).
-5. The citeguard summary: counts of `found` / `likely_wrong` / `not_found` /
-   `retraction`, plus the path to the full report.
+5. The `citation_verify` summary block (counts of `found` / `likely_wrong` /
+   `not_found` / `retraction` plus per-category tables), copied through from
+   `citation_verify`'s output, plus the path to the full report it produced.
 6. A one-line next step (e.g., "Cite `@pmid12345678` in your Discussion where
    you mention prior daptomycin reactions.").
 
@@ -244,7 +248,8 @@ The final assistant message must contain, in this order:
 | `esearch` returns 0 hits | Suggest 3 query relaxations (drop term / switch `[mh]`→`[tiab]` / drop `"case reports"[pt]`). Ask the user which to apply. |
 | `efetch` returns partial XML (network truncation) | Retry once with 2s backoff. If still partial, drop the affected PMIDs and report the failure. Do not emit partial BibTeX. |
 | NCBI rate-limit (HTTP 429) | Wait 1s, retry. If repeated, suggest the user supply an NCBI API key. |
-| citeguard reports a `likely_wrong` for a candidate the user already approved | Show the diff; ask whether to keep, remove, or replace with a citeguard-suggested candidate. |
+| `citation_verify` reports a `likely_wrong` for a candidate the user already approved | Surface the diff from its report; ask whether to keep, remove, or replace with the candidate it suggested. Do not silently re-edit `refs.bib`. |
+| `citation_verify` is unavailable (citeguard not installed, etc.) | Surface its error and stop before declaring step 6 done. Do not skip verification silently. |
 | `refs.bib` already contains `pmid<PMID>` | Skip that entry silently in step 5; mention the skip in the final summary. |
 | User has no NCBI email configured | Ask once via `AskUserQuestion` and reuse for the rest of the session. Do not call NCBI without an email. |
 
@@ -254,9 +259,10 @@ The final assistant message must contain, in this order:
    this session? (If "from memory" — start over.)
 2. Is the citation key `pmid<PMID>` for every entry?
 3. Did you append (not overwrite) `refs.bib`?
-4. Did you run citeguard on the updated file and read its report?
-5. Did you report `likely_wrong` / `not_found` / `retraction` counts to the
-   user (even if zero)?
+4. Did you hand off to `citation_verify` (not run citeguard yourself) and
+   read its summary?
+5. Did you transcribe the `citation_verify` counts (and the non-zero
+   per-category tables) into this skill's final message?
 6. Did you avoid editing `draft.md`?
 
 ## Testing this skill
@@ -284,10 +290,16 @@ Pass criteria:
 - No invented fields. (Specifically: PMID 99999002 in the fixture lacks a DOI;
   the corresponding entry must omit `doi =`, not insert a placeholder.)
 
+The citeguard / citation-verification logic is covered by
+`skills/citation_verify/tests/` (frozen citeguard report → expected summary).
+This file's fixture intentionally stops at BibTeX assembly.
+
 ## Reference
 
 - NCBI E-utilities documentation: https://www.ncbi.nlm.nih.gov/books/NBK25501/
-- citation-checker (citeguard): https://github.com/SRWS-PSG/citation-checker
+- Citation verification is delegated to
+  [citation_verify](../citation_verify/SKILL.md), which wraps the
+  citation-checker (citeguard) tool: https://github.com/SRWS-PSG/citation-checker
 - This skill follows the same "indicate, don't rewrite" discipline as
   [deidentify_check](../deidentify_check/SKILL.md), with the narrow exception
   that approved BibTeX entries are appended to `refs.bib` after explicit
