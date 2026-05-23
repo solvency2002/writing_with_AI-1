@@ -1,16 +1,20 @@
 ---
 name: submission_guidelines_check
-version: 0.1.0
+version: 0.2.0
 description: |
-  Compare a case-report manuscript (`draft.md`) against the target journal's
-  Author Instructions (submission guidelines) and report deviations. Never
-  rewrites the manuscript; emits a structured deviation list with the exact
-  guideline source URL or fixture path next to each finding. AI must fetch
-  the real guidelines via WebFetch (or use an author-supplied frozen text);
-  reciting guidelines "from memory" is forbidden because journal policies
-  change frequently and case-report-specific rules vary widely between
-  journals (BMJ Case Reports vs. Journal of Medical Case Reports vs. Cureus
-  vs. Oxford Medical Case Reports etc.).
+  Two-mode tool for case-report submission compliance. In `extract_only`
+  mode, fetches the target journal's Author Instructions and emits a
+  rule table only (no manuscript required) — used by
+  `case_report_workflow` to seed Step 9 drafting constraints. In
+  `compare` mode (the default), additionally applies the rules against
+  `draft.md` and reports deviations. Never rewrites the manuscript;
+  emits a structured deviation list with the exact guideline source URL
+  or fixture path next to each finding. AI must fetch the real
+  guidelines via WebFetch (or use an author-supplied frozen text);
+  reciting guidelines "from memory" is forbidden because journal
+  policies change frequently and case-report-specific rules vary widely
+  between journals (BMJ Case Reports vs. Journal of Medical Case Reports
+  vs. Cureus vs. Oxford Medical Case Reports etc.).
 allowed-tools:
   - Read
   - Grep
@@ -26,33 +30,58 @@ author instructions, then compare the manuscript against them and report
 deviations** — never to rewrite the manuscript or guess what a journal
 requires.
 
-This skill is part of the "Writing with AI" case-report workflow, slotted
-between `bottom_line_message` (content finalized) and ドラフト生成 (full draft
-written). Running it earlier surfaces structural constraints (word counts,
-required sections, consent statement) so the author does not waste effort on
-formatting that the journal will reject anyway.
+This skill is part of the "Writing with AI" case-report workflow. It is
+invoked twice:
+
+- **`mode: extract_only`** — before drafting (Step 8 of
+  `case_report_workflow`). Fetches the guidelines, extracts the rule
+  table, and stops. No `draft.md` required. Output is the rule table the
+  workflow transcribes as "Step 9 generation constraints" so the draft
+  is built to spec from the start.
+- **`mode: compare`** (default) — after revision (Step 12 of
+  `case_report_workflow`, or any standalone audit). Re-fetches (or
+  re-uses) the rule table and applies it against the manuscript,
+  emitting the deviation report. Requires `draft.md`.
+
+Running the extract pass before drafting surfaces structural constraints
+(word counts, required sections, consent statement) so the author does
+not waste effort on formatting that the journal will reject anyway.
+Running the compare pass after revision catches deviations that survived
+or were introduced during editing.
 
 ## When to invoke
 
 User says something like:
 
-- 「BMJ Case Reports の規定で `@draft.md` を見て」
-- 「投稿先は JMCR。submission-guidelines-check かけて」
+- 「BMJ Case Reports の規定で `@draft.md` を見て」(→ `mode: compare`)
+- 「投稿先は JMCR。submission-guidelines-check かけて」(→ `mode: compare`
+  if a draft exists; `mode: extract_only` otherwise)
 - "Run submission-guidelines-check on draft.md for Cureus"
+- "Extract the JMCR author-instruction rules so I can draft to spec"
+  (→ `mode: extract_only`)
 
 ## Inputs
 
-- **Required (either A or B)**:
+- **Required**: `mode` — one of `extract_only` | `compare`. Default
+  `compare`.
+- **Required (either A or B or C)**:
   - **A** — target journal name (the skill will WebFetch the canonical author-
     instructions page for that journal), OR
   - **B** — explicit URL to the author-instructions page (preferred — removes
     ambiguity about which page is canonical), OR
   - **C** — path to a local, frozen guidelines text (used for offline
     sessions and the regression fixture).
-- **Required**: path to `draft.md`.
-- **Optional**: path to `refs.bib` (used for the citation-style check).
+- **Required when `mode: compare`**: path to `draft.md`. **Not required
+  when `mode: extract_only`** — if supplied, ignored.
+- **Optional**: path to `refs.bib` (used for the citation-style check;
+  only consulted in `mode: compare`).
 - **Optional**: a CSL filename present in `demo/styles/` so the skill can
-  cross-check the citation style declaration in the YAML frontmatter.
+  cross-check the citation style declaration in the YAML frontmatter
+  (only consulted in `mode: compare`).
+- **Optional**: a previously-extracted rule table (markdown table from a
+  prior `extract_only` run) — pass this in `mode: compare` to skip the
+  fetch + re-extract and apply the already-extracted rules. Useful when
+  Step 8 and Step 12 of `case_report_workflow` share a rule table.
 
 If the journal name is given but no URL, ask the user once via
 `AskUserQuestion` to confirm the URL before fetching. **Do not guess the URL
@@ -63,6 +92,26 @@ from training data.** Examples of correct, author-supplied URLs:
 - Cureus: https://www.cureus.com/about/case-reports
 
 ## Procedure
+
+### 0. Mode dispatch
+
+Resolve `mode` from the inputs:
+
+- `extract_only`: run **Step 1 → Step 2**, then emit the rule table and
+  stop. Skip Step 3 (rule application) and Step 4 (deviation report).
+  The final message format is shortened (see "Output format — extract
+  only" below).
+- `compare`: run all four steps. This is the default.
+
+If `mode: compare` but no `draft.md` path was supplied, stop and ask the
+user — do not silently downgrade to `extract_only`. If `mode:
+extract_only` but a `draft.md` was supplied, ignore the draft and
+proceed.
+
+If a previously-extracted rule table was supplied **and** `mode:
+compare`, skip Step 1 + Step 2 and go directly to Step 3 using the
+provided rules. Surface a note in the output indicating the rule table
+was reused (with the supplier's timestamp if available).
 
 ### 1. Acquire the guidelines text
 
@@ -112,7 +161,38 @@ If a category is absent from the journal's guidelines (e.g., the journal does
 not require an AI disclosure), record that explicitly as `not_required` in
 the rule table — do not fabricate a rule.
 
-### 3. Apply each rule to `draft.md`
+### 2b. (extract_only only) Emit the rule table and stop
+
+When `mode: extract_only`, the rule table is the only deliverable. Emit:
+
+```markdown
+## submission-guidelines-check report (extract_only)
+
+- target journal: <name>
+- guideline source: <URL or fixture path> (fetched: <ISO timestamp>)
+- mode: extract_only — no manuscript comparison performed
+
+### Extracted rules
+
+| rule_id | category | rule | source span / quote |
+|---|---|---|---|
+| SG1.1 | word_count | ... | "..." |
+| SG2.1 | sections | ... | "..." |
+| ... |
+
+### Notes for downstream draft generation
+
+- <one-line hints the draft generator should honor, e.g.,
+  "Abstract ≤ 250 words; required sections per SG2.1; consent statement
+  per SG5.1; AI disclosure per SG11.1.">
+```
+
+Do **not** invent verdicts (`pass` / `fail` / `unclear`) in this mode —
+there is no manuscript to compare against. Stop after this output.
+`case_report_workflow` reads this table and transcribes the rules into
+its Step 9 generation constraints.
+
+### 3. (compare only) Apply each rule to `draft.md`
 
 For each rule:
 
@@ -145,7 +225,7 @@ journal mandates a specific style (e.g., Vancouver, AMA), and the CSL file
 name does not match, flag SG4 as `fail` with the diff (declared vs.
 required).
 
-### 4. Emit the deviation report
+### 4. (compare only) Emit the deviation report
 
 Final output structure (Japanese narrative, English replacement / structural
 suggestions where applicable):
@@ -182,10 +262,14 @@ suggestions where applicable):
 - Source: <URL>
 - Observed in draft.md: no consent statement detected (searched for "consent"
   / "同意" / "informed consent").
-- Suggested action: add a sentence at the end of Methods or as a separate
-  Declarations subsection — e.g., "Written informed consent was obtained from
-  the patient for publication of this case report and any accompanying
-  images."
+- Suggested action: **after confirming with the author that written
+  informed consent has actually been obtained**, add a sentence at the
+  end of Methods or as a separate Declarations subsection — e.g.,
+  "Written informed consent was obtained from the patient for
+  publication of this case report and any accompanying images." If
+  consent has not yet been obtained, the draft must carry a
+  `[TODO: confirm written informed consent ...]` placeholder until it
+  is.
 
 ... (continue for each fail / unclear finding) ...
 
@@ -233,18 +317,39 @@ section-editing prompt, or `peer_review_simulator` after revisions).
    resolved.
 7. **Use the SG-prefixed rule IDs.** Other skills (esp.
    `case_report_workflow`) parse these.
+8. **Respect `mode`.** In `extract_only`, emit only the rule table — no
+   verdicts. In `compare`, apply every rule and emit verdicts. Do not
+   silently downgrade `compare` to `extract_only` when a draft is missing
+   — stop and ask.
 
 ## Output format
 
+### `mode: compare` (default)
+
 The final assistant message contains, in this order:
 
-1. The source URL (or fixture path) and fetch timestamp.
+1. The mode (`compare`) and source URL (or fixture path) + fetch
+   timestamp.
 2. The rule table extracted in step 2 (so the author can audit the
    extraction).
 3. The deviation report from step 4 (summary + findings + passing checks +
    open questions).
 4. A one-line "Next action" suggestion (e.g., "Address SG1.1 and SG5.1
    before submitting; re-run this skill after revision.").
+
+### `mode: extract_only`
+
+The final assistant message contains, in this order:
+
+1. The mode (`extract_only`) and source URL (or fixture path) + fetch
+   timestamp.
+2. The rule table from step 2.
+3. The "Notes for downstream draft generation" block from step 2b.
+4. A one-line "Next action" pointer (e.g., "`case_report_workflow` Step 9
+   will draft to these rules; re-invoke with `mode: compare` against the
+   resulting `draft.md` at Step 12.").
+
+No verdicts, no findings, no draft references.
 
 ## Failure modes and how to handle them
 
@@ -253,20 +358,28 @@ The final assistant message contains, in this order:
 | WebFetch fails (timeout, 4xx, 5xx) | Surface the error verbatim. Ask the user for an alternative URL or a frozen text. Do not silently fall back to memory. |
 | Journal name supplied but no URL | Ask once via `AskUserQuestion`. Do not guess. |
 | Guidelines page splits rules across multiple sub-pages (e.g., a general page + a "case reports" page) | Fetch both, merge, and record both URLs in the source field. |
-| `draft.md` lacks a section the rule references | Mark the finding `unclear`, note the missing section, and suggest adding it. |
-| Rule wording is ambiguous ("around N words") | Verdict = `unclear`. Note the ambiguity in the report. |
-| `csl:` in YAML points to a file that does not exist | SG4 = `fail` with "declared CSL file not found at <path>". |
+| `draft.md` lacks a section the rule references (compare mode) | Mark the finding `unclear`, note the missing section, and suggest adding it. |
+| Rule wording is ambiguous ("around N words") | Verdict = `unclear`. Note the ambiguity in the report. (Only relevant in compare mode; extract_only records the ambiguity verbatim in the rule table.) |
+| `csl:` in YAML points to a file that does not exist | SG4 = `fail` with "declared CSL file not found at <path>". (Compare mode only.) |
 | Conflicting rules between journal pages | Mark both, verdict = `unclear`, ask the author which page is canonical. |
+| `mode: compare` but no `draft.md` supplied | Stop and ask. Do not auto-switch to `extract_only`. |
+| `mode: extract_only` but a previously-extracted rule table was also supplied | Re-extract anyway (the explicit `extract_only` invocation overrides cache). |
 
 ## Self-check before returning
 
-1. Did you fetch (not recall) the guidelines text?
-2. Does every fail/unclear finding include the source quote and URL/path?
-3. Are findings ordered by SG-prefixed rule ID?
-4. Did you leave `draft.md` and `refs.bib` untouched?
-5. Is the word-count methodology stated in the report?
-6. Did you mark genuinely ambiguous rules `unclear` rather than guessing?
-7. Did you avoid proposing a rewrite of the manuscript text?
+1. Did you fetch (not recall) the guidelines text? (Skip if a
+   previously-extracted rule table was reused — note this in the output.)
+2. Was `mode` honored? (`extract_only` → no verdicts; `compare` → every
+   rule has a verdict.)
+3. Does every fail/unclear finding include the source quote and URL/path?
+   (Compare mode only.)
+4. Are findings ordered by SG-prefixed rule ID?
+5. Did you leave `draft.md` and `refs.bib` untouched?
+6. Is the word-count methodology stated in the report? (Compare mode
+   only.)
+7. Did you mark genuinely ambiguous rules `unclear` rather than guessing?
+   (Compare mode only.)
+8. Did you avoid proposing a rewrite of the manuscript text?
 
 ## Testing this skill
 
@@ -305,9 +418,9 @@ Pass criteria:
 
 - CARE 2013 checklist (independent of journal): the foundation for SG2 / SG5
   / SG10 checks. See `skills/care_check/` for the structural-checklist skill.
-- Downstream caller: `skills/case_report_workflow/SKILL.md` (planned). The
-  orchestrator runs this skill before generating the full draft, then again
-  after revisions if the target journal changes.
+- Downstream caller: [case_report_workflow](../case_report_workflow/SKILL.md).
+  The orchestrator runs this skill twice — `extract_only` at Step 8 (before
+  drafting) and `compare` at Step 12 (after Step 11 revisions).
 - This skill follows the same "indicate, don't rewrite" discipline as
   [deidentify_check](../deidentify_check/SKILL.md) and
   [citation_verify](../citation_verify/SKILL.md).

@@ -1,14 +1,21 @@
 ---
 name: similar_cases_search
-version: 0.1.0
+version: 0.2.0
 description: |
-  Search PubMed for case reports similar to the user's case and emit grounded
-  BibTeX entries the author can paste into refs.bib. The skill never invents
-  citation metadata: every field in the output BibTeX is sourced from the
-  PubMed efetch XML for an explicit PMID. After candidates are appended, this
-  skill delegates verification to the `citation_verify` skill (which runs
-  citeguard) instead of running the citation checker itself. Use this for the
-  "find me 5 similar case reports for my draft" task in case-report drafting.
+  Search PubMed for literature supporting a case report and emit grounded
+  BibTeX entries the author can paste into refs.bib. Two search modes:
+  (a) `similar_cases` (default) — finds prior case reports of the same
+  presentation/diagnosis; (b) `background_literature` — finds reviews,
+  guidelines, and original studies that establish typical
+  presentation / epidemiology / diagnostic criteria / treatment
+  standards (anchors against which the case's findings deviate). The
+  skill never invents citation metadata: every field in the output
+  BibTeX is sourced from the PubMed efetch XML for an explicit PMID.
+  After candidates are appended, this skill delegates verification to
+  the `citation_verify` skill (which runs citeguard) instead of running
+  the citation checker itself. Use this for both the "find me 5 similar
+  case reports for my draft" task and the "find background/guideline
+  references for my discussion" task in case-report drafting.
 allowed-tools:
   - Read
   - Write
@@ -21,13 +28,25 @@ allowed-tools:
 
 # similar-cases-search: PubMed-grounded reference candidates for case reports
 
-You are a literature-search assistant for case reports. Your job is to take the
-clinical features of the user's case and **return BibTeX entries the author can
-paste into `refs.bib`**, where every field is grounded in a PubMed record the
-author can re-fetch by PMID.
+You are a literature-search assistant for case reports. Your job is to take
+the clinical features of the user's case and **return BibTeX entries the
+author can paste into `refs.bib`**, where every field is grounded in a
+PubMed record the author can re-fetch by PMID.
 
-This skill is part of the "Writing with AI" workflow, in which the AI **must
-never invent citations**. The discipline is strict:
+The skill runs in one of two modes (`search_mode`):
+
+- **`similar_cases`** (default) — finds prior case reports of the same
+  presentation/diagnosis. Used for the "have others reported this?"
+  question and as direct comparators in the Discussion.
+- **`background_literature`** — finds reviews, guidelines, and original
+  studies establishing the *typical* presentation, epidemiology,
+  diagnostic criteria, or standard-of-care treatment. Used as
+  "anchors" against which the case's deviation is shown (e.g.,
+  `bottom_line_message` expects an anchor per finding), and to support
+  background paragraphs of the Introduction / Discussion.
+
+This skill is part of the "Writing with AI" workflow, in which the AI
+**must never invent citations**. The discipline is strict:
 
 - Do not write `@article{...}` blocks from memory.
 - Every emitted BibTeX entry must come from a PubMed efetch response for a
@@ -39,19 +58,31 @@ never invent citations**. The discipline is strict:
 
 User says something like:
 
-- 「この症例に似た症例報告を PubMed で探して」
-- 「主訴と診断から refs.bib の候補を5件出して」
+- 「この症例に似た症例報告を PubMed で探して」(→ `similar_cases`)
+- 「主訴と診断から refs.bib の候補を5件出して」(→ `similar_cases`)
 - "Find similar case reports for this presentation and add them to refs.bib"
+  (→ `similar_cases`)
+- 「典型的な daptomycin の副作用プロファイルをまとめた review を探して」(→
+  `background_literature`)
+- 「IgG4関連疾患の診断基準のガイドラインを refs.bib に追加して」(→
+  `background_literature`)
+- "Find background literature / guidelines for the discussion anchor"
+  (→ `background_literature`)
 
 ## Inputs
 
+- **Required**: `search_mode` — one of `similar_cases` |
+  `background_literature`. Default `similar_cases`.
 - **Required**: case keywords. Either:
   - free-text from the user ("80-year-old male, eosinophilic pneumonia after
     daptomycin"), OR
   - a path to `@draft.md` from which the skill extracts diagnosis / exposure /
     presentation keywords.
 - **Optional**: path to `refs.bib` (default: `demo/refs.bib`). Candidates are
-  appended here after the author approves them.
+  appended here after the author approves them. **Both modes append to the
+  same `refs.bib`** — citation keys are `pmid<PMID>` regardless of mode,
+  so downstream skills (`citation_verify`, `bottom_line_message`) treat
+  the two pools uniformly.
 - **Optional**: desired number of candidates (default: 5, max: 20).
 - **Optional**: NCBI API contact email. Required by NCBI E-utilities terms of
   use. If not supplied, ask the user once via `AskUserQuestion` and remember
@@ -61,21 +92,36 @@ User says something like:
 
 ### 1. Build the PubMed query
 
-Convert the case features into a PubMed query string with these rules:
+Convert the case features into a PubMed query string. The filter clauses
+depend on `search_mode`:
+
+Common rules (both modes):
 
 - Combine 2–4 clinical concepts with `AND`.
 - Use MeSH terms when the concept is a recognized MeSH heading (drug, disease,
   organism). Append the `[mh]` tag.
 - Use `[tiab]` for free-text concepts not in MeSH.
-- Restrict to case reports with `AND "case reports"[pt]`.
 - Restrict to humans with `AND humans[mh]` unless the user objects.
+
+Mode-specific clauses:
+
+- `similar_cases`: append `AND "case reports"[pt]` so PubMed returns only
+  case reports.
+- `background_literature`: **do not** append `"case reports"[pt]`. Instead
+  append a publication-type filter focused on synthesis / standards:
+  `AND (review[pt] OR "systematic review"[pt] OR meta-analysis[pt] OR
+  guideline[pt] OR "practice guideline"[pt] OR randomized-controlled-trial[pt])`.
+  This biases results toward background-anchor literature rather than
+  prior single cases.
 
 Example construction:
 
-| User input | Query string |
-|---|---|
-| "daptomycin-induced eosinophilic pneumonia" | `(daptomycin[mh] OR daptomycin[tiab]) AND (eosinophilic pneumonia[mh] OR eosinophilic pneumonia[tiab]) AND "case reports"[pt] AND humans[mh]` |
-| "IgG4-related disease presenting as orbital pseudotumor" | `(IgG4-related disease[mh] OR IgG4-related disease[tiab]) AND (orbital pseudotumor[tiab]) AND "case reports"[pt] AND humans[mh]` |
+| Mode | User input | Query string |
+|---|---|---|
+| `similar_cases` | "daptomycin-induced eosinophilic pneumonia" | `(daptomycin[mh] OR daptomycin[tiab]) AND (eosinophilic pneumonia[mh] OR eosinophilic pneumonia[tiab]) AND "case reports"[pt] AND humans[mh]` |
+| `similar_cases` | "IgG4-related disease presenting as orbital pseudotumor" | `(IgG4-related disease[mh] OR IgG4-related disease[tiab]) AND (orbital pseudotumor[tiab]) AND "case reports"[pt] AND humans[mh]` |
+| `background_literature` | "daptomycin adverse effect profile review" | `(daptomycin[mh] OR daptomycin[tiab]) AND (adverse effects[mh] OR safety[tiab]) AND (review[pt] OR "systematic review"[pt] OR meta-analysis[pt] OR guideline[pt]) AND humans[mh]` |
+| `background_literature` | "IgG4-related disease diagnostic criteria guideline" | `(IgG4-related disease[mh] OR IgG4-related disease[tiab]) AND (diagnostic criteria[tiab] OR diagnosis[mh]) AND (guideline[pt] OR "practice guideline"[pt] OR review[pt]) AND humans[mh]` |
 
 **Show the user the constructed query** before executing it. If the user
 revises it, use the revised version.
@@ -135,20 +181,28 @@ field out. Never fill in a placeholder.
 
 ### 4. Show candidates to the user
 
-Emit a compact summary table **before** writing to `refs.bib`:
+Emit a compact summary table **before** writing to `refs.bib`. Include the
+mode in the header so the author can distinguish similar-case hits from
+background-literature hits when both modes have been run:
 
 ```markdown
 ## similar-cases-search candidates
 
+Mode: `similar_cases` (or `background_literature`)
 Query: `(daptomycin[mh] OR daptomycin[tiab]) AND ... AND "case reports"[pt]`
 Total hits: 47 (showing top 5 by relevance)
 
-| # | PMID | Year | Journal | Title (truncated) |
-|---|---|---|---|---|
-| 1 | 12345678 | 2021 | BMJ Case Rep | Daptomycin-induced eosinophilic pneumonia in ... |
-| 2 | 23456789 | 2019 | Chest | A case of eosinophilic pneumonia after ... |
+| # | PMID | Year | Journal | Type | Title (truncated) |
+|---|---|---|---|---|---|
+| 1 | 12345678 | 2021 | BMJ Case Rep | case-report | Daptomycin-induced eosinophilic pneumonia in ... |
+| 2 | 23456789 | 2019 | Chest | case-report | A case of eosinophilic pneumonia after ... |
 | ... |
 ```
+
+In `background_literature` mode, the `Type` column reflects PubMed's
+publication-type tag (`review`, `systematic-review`, `meta-analysis`,
+`guideline`, `practice-guideline`, `RCT`) so the author can prefer
+higher-tier syntheses when picking anchors.
 
 Ask the user (`AskUserQuestion`) which PMIDs to keep before appending to
 `refs.bib`. Default to "all 5" if the user wants a fast workflow, but always
@@ -214,10 +268,13 @@ author needs to act on. `found`-only outcomes are silent successes.
 1. **Never invent citation metadata.** If you cannot fetch the PubMed XML in
    this session, do not emit a BibTeX entry. Tell the user the network call
    failed and stop.
-2. **Citation key = `pmid<PMID>`**. This makes every entry re-verifiable.
+2. **Citation key = `pmid<PMID>`** in both modes. This makes every entry
+   re-verifiable and uniform across modes.
 3. **One PMID = one BibTeX entry.** Do not merge or de-duplicate by title.
-4. **Restrict to case reports** by default (`"case reports"[pt]`). Offer to
-   relax only if the user explicitly asks.
+4. **Respect `search_mode`.** `similar_cases` uses `"case reports"[pt]`;
+   `background_literature` uses the review / guideline / RCT filter. Do
+   not silently mix modes within one query; if the author wants both,
+   run the skill twice.
 5. **Surface the query to the user before executing.** The query is the
    reviewable artifact; the PMID list is just its consequence.
 6. **Surface the `citation_verify` summary.** Do not declare success until
@@ -231,15 +288,18 @@ author needs to act on. `found`-only outcomes are silent successes.
 
 The final assistant message must contain, in this order:
 
-1. The PubMed query string (the exact `term=` value used).
-2. The candidates table (from step 4).
-3. The list of PMIDs the user approved.
-4. The BibTeX block appended to `refs.bib` (for copy-paste audit).
-5. The `citation_verify` summary block (counts of `found` / `likely_wrong` /
+1. The `search_mode` used (`similar_cases` or `background_literature`).
+2. The PubMed query string (the exact `term=` value used).
+3. The candidates table (from step 4).
+4. The list of PMIDs the user approved.
+5. The BibTeX block appended to `refs.bib` (for copy-paste audit).
+6. The `citation_verify` summary block (counts of `found` / `likely_wrong` /
    `not_found` / `retraction` plus per-category tables), copied through from
    `citation_verify`'s output, plus the path to the full report it produced.
-6. A one-line next step (e.g., "Cite `@pmid12345678` in your Discussion where
-   you mention prior daptomycin reactions.").
+7. A one-line next step. For `similar_cases`, suggest a Discussion
+   placement; for `background_literature`, suggest using the entries as
+   anchors in `bottom_line_message` or in the Introduction's background
+   paragraph.
 
 ## Failure modes and how to handle them
 
@@ -297,9 +357,17 @@ This file's fixture intentionally stops at BibTeX assembly.
 ## Reference
 
 - NCBI E-utilities documentation: https://www.ncbi.nlm.nih.gov/books/NBK25501/
+- PubMed publication-type filters:
+  https://pubmed.ncbi.nlm.nih.gov/help/#publication-types
 - Citation verification is delegated to
   [citation_verify](../citation_verify/SKILL.md), which wraps the
   citation-checker (citeguard) tool: https://github.com/SRWS-PSG/citation-checker
+- Upstream callers: [case_report_workflow](../case_report_workflow/SKILL.md)
+  invokes this skill in `similar_cases` mode at Step 4 and in
+  `background_literature` mode at Step 5.
+  [bottom_line_message](../bottom_line_message/SKILL.md) expects
+  background-literature entries to be present as "anchors" for each
+  takeaway.
 - This skill follows the same "indicate, don't rewrite" discipline as
   [deidentify_check](../deidentify_check/SKILL.md), with the narrow exception
   that approved BibTeX entries are appended to `refs.bib` after explicit

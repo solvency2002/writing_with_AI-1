@@ -30,6 +30,22 @@ you a curated `refs.bib` of PubMed-grounded entries (citation keys of the form
 `pmid<PMID>`); your job is to attach those keys to each candidate takeaway so
 every assertion the author makes is traceable to a real publication.
 
+`refs.bib` may contain entries from both `similar_cases_search` modes:
+
+- entries added in `search_mode: similar_cases` — prior case reports of
+  the same presentation. Useful as *supports* (other authors have seen
+  this).
+- entries added in `search_mode: background_literature` — reviews,
+  guidelines, RCTs, meta-analyses. Useful as *anchors* (they describe
+  the typical / expected presentation, against which this case
+  deviates).
+
+The Matsubara method requires each takeaway to have **both** an anchor
+and at least one support, so a well-populated `refs.bib` typically draws
+from both modes. If `refs.bib` only has `similar_cases` entries and no
+background-literature anchor exists for a candidate takeaway, the skill
+must surface the gap (see Phase 2).
+
 ## Philosophy (do not break)
 
 1. **Clinical usefulness over rarity.** A finding is worth reporting because it
@@ -127,9 +143,19 @@ While asking, **silently keep two columns**:
   with a PMID from `refs.bib` that articulates the typical expectation).
 
 If a "surprise" cannot be paired with an "anchor" anywhere in `refs.bib`, flag
-it: *"この驚きを裏付ける比較対象が refs.bib に見当たりません。similar-cases-search
-を <suggested query> で再実行しますか、それとも anchor を typical-case 記述として手元の
-ガイドラインから補いますか？"* Do not silently drop the candidate.
+it: *"この驚きを裏付ける anchor (典型例・ガイドライン・review) が refs.bib に
+見当たりません。similar_cases_search を `search_mode: background_literature`
+で <suggested query> 再実行しますか、それとも anchor を typical-case 記述として
+手元のガイドラインから補いますか？"* Do not silently drop the candidate.
+
+Heuristic for distinguishing anchor vs. support entries already in
+`refs.bib`: if the BibTeX `journal` looks like a case-report venue
+(contains "Case Rep", "Case Reports", "JMCR", etc.), the entry is more
+likely a support. If the journal is a review/guideline venue or the
+title contains "review", "guideline", "meta-analysis", "systematic
+review", "consensus", the entry is more likely an anchor. Use this
+heuristic only as a tie-breaker — when the author indicates a different
+role for a citation, honor their judgment.
 
 ### Phase 3 — Clinical-significance analysis (フェーズ3)
 
