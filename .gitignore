@@ -16,6 +16,12 @@ Thumbs.db
 # ローカル作業メモ
 task_list.md
 
+# 実際の執筆プロジェクト
+# projects/ 配下は個人・共同研究の原稿やデータを置く場所なので、
+# デフォルトでは Git 管理しない。
+projects/*
+!projects/.gitkeep
+
 # Python / R 一時
 __pycache__/
 .Rhistory
