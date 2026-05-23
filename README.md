@@ -202,8 +202,14 @@ powershell -ExecutionPolicy Bypass -File demo/render_docx.ps1
     │   └── SKILL.md
     ├── render_and_upload/       # Markdown → Google Docs Skill (スライド §9)
     │   └── SKILL.md
-    └── fetch_gdoc_changes/      # Google Docs の編集を取り込む Skill (スライド §10)
-        └── SKILL.md
+    ├── fetch_gdoc_changes/      # Google Docs の編集を取り込む Skill (スライド §10)
+    │   └── SKILL.md
+    ├── deidentify_check/        # 症例報告の個人情報チェック Skill
+    │   ├── SKILL.md
+    │   └── tests/               # fixture_draft.md + expected_findings.md
+    └── similar_cases_search/    # PubMed 類似症例検索 → refs.bib 候補 Skill
+        ├── SKILL.md
+        └── tests/               # fixture_efetch.xml + expected_refs.bib
 ```
 
 ## ボトムライン
