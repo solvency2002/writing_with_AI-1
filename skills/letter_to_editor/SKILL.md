@@ -148,9 +148,11 @@ Implied default: `projects/<name>/` where `<name>` is derived from the memo
 or the target article's topic, confirmed with the author at Step 1. Per the
 repository CLAUDE.md, `projects/*` is Git-ignored working space; do not add
 these files to Git unless the author explicitly asks. Artifacts written:
-`draft.md`, `refs.bib`, `reference_quotes.md` (verbatim supporting quotes for
-the approved references, saved by `similar_cases_search` so the author can
-review them later), `target_article_ledger.md`, `handoff.md`, and a
+`draft.md`, `refs.bib`, `reference_quotes.md` (the **reference quote gate** —
+one row per supporting citation: citekey, the draft claim it backs, a verbatim
+quote from the abstract, location, and a `status` of `pending` or `approved`;
+drafting may only cite `approved` rows — see Steps 4 and 6),
+`target_article_ledger.md`, `handoff.md`, and a
 `searches/` subfolder holding the literature-search formulas and their staging
 output (`searches/<topic>.query.txt` + `searches/<topic>.candidates.md`; see
 Step 4). The author-placed target-article file stays as-is (read-only). All of
@@ -170,7 +172,7 @@ reply during the workflow:
 | 1 | input + folder + limits | pending / done | <folder path; word/ref limits; target-article file> |
 | 2 | target-article ledger + quote gate | pending / done | <quotes confirmed? yes/no> |
 | 3 | spin/bias analysis | pending / done | <P2 code + P3 code> |
-| 4 | similar_cases_search (background) | pending / done | <refs.bib path + N entries added> |
+| 4 | similar_cases_search + reference quote gate | pending / done | <refs.bib path + N added; quote gate: A approved / P pending> |
 | 5 | citation_verify (initial) | pending / done | <counts: found/likely_wrong/not_found/retraction> |
 | 6 | draft generated | pending / done | <draft.md path; word count; ref count; TODO count> |
 | 7 | review (letter_review_simulator + proofread + limits) | pending / done | <Major count; style hits; over-limit? yes/no> |
@@ -181,7 +183,10 @@ reply during the workflow:
 
 Update the state block after every step transition. Mark a step `skipped`
 (not `done`) only when the author explicitly chose to skip, and record why.
-Steps 4 and 5 are **not** skippable.
+Steps 4 and 5 are **not** skippable. The reference quote gate inside Step 4 is
+also **not** skippable: Step 4 is not `done` while any `reference_quotes.md` row
+is `pending`, and Step 6 must not start until every supporting row is
+`approved`.
 
 ## Procedure
 
@@ -289,6 +294,30 @@ acceptable), so the author can verify relevance from the abstract text before
 choosing which PMIDs to keep. Approved entries are appended to `refs.bib` via
 the script's `add` subcommand (or by `similar_cases_search` itself).
 
+**Then run the reference quote gate** (this is the part most easily skipped —
+do not skip it). For every key appended to `refs.bib`, write a row into
+`reference_quotes.md` with `status: pending`, recording the citekey, the exact
+draft claim the citation is meant to back, the verbatim abstract quote, and its
+location. Then emit the gate to the author, in the same shape as the Step 2
+quote gate:
+
+```markdown
+#### 参照文献の quote ゲート
+
+- [@pmid<PMID>] — 主張: "<the sentence this will support in the draft>"
+  - 該当 quote (verbatim): "<abstract quote>"
+  - この quote は上の主張を支持していますか? (yes / 直す / 別文献)
+```
+
+A row flips to `status: approved` **only** when the author confirms that the
+quote supports that specific claim. Passing `citation_verify` does **not**
+approve a row — verify confirms the reference exists and is not retracted; it
+says nothing about whether the source supports the claim. The two checks are
+orthogonal, and a green `citation_verify` must never be read as quote approval.
+If the author says the quote does not fit, either re-search for a source that
+does (re-run `search`, re-surface quotes) or drop the claim; do not advance a
+mismatched row to `approved`.
+
 This step is **mandatory** — do not skip it. If the email is unavailable,
 ask for it; do not bypass the search. If a genuinely strong critique needs
 no external citation (the bias is self-evident from the article's own
@@ -306,6 +335,19 @@ state). This step is **not** skippable.
 ### Step 6 — Draft generated
 
 This is the **first** step where the orchestrator writes to `draft.md`.
+
+**Precondition — the reference quote gate must be clear (手戻りゲート).** Before
+writing a single line of `draft.md`, read `reference_quotes.md`. Every
+supporting citekey in `refs.bib` (the target-article key is exempt — its
+fidelity is gated by `target_article_ledger.md` at Step 2) must have a row with
+`status: approved`. If any row is `pending`, or a supporting key has no row at
+all, **do not write `draft.md`.** Stop and send the author back to the Step 4
+quote gate, naming exactly which keys are unapproved and showing each one's
+claim and verbatim quote for confirmation. Drafting consumes `approved` rows as
+its source of truth: a citation may appear in `draft.md` only if its row is
+`approved`, and the sentence it backs must match that row's recorded claim.
+Resume drafting only after the author clears the outstanding rows. Do not work
+around a `pending` row by silently dropping the citation — surface it.
 
 Before writing, read the shared style file
 [`../case_report_workflow/style_discipline.md`](../case_report_workflow/style_discipline.md).
@@ -369,12 +411,16 @@ Drafting rules:
   characterization the ledger does not support, insert
   `[TODO: confirm target-article wording for <point>]` instead of inventing
   it.
-- **Citation discipline**: cite only pandoc keys `[@<key>]` whose `<key>`
-  exists in `refs.bib`. Grep `refs.bib` before each citation; if a key is
-  absent, do not invent it — insert `[TODO: similar_cases_search for <topic>]`.
-  The target article is cited the same way, `[@<target-key>]`, after its
+- **Citation discipline**: cite only pandoc keys `[@<key>]` that both exist in
+  `refs.bib` **and** carry an `approved` row in `reference_quotes.md`. Existence
+  in `refs.bib` is necessary but not sufficient — an unapproved key must not be
+  cited (see the Step 6 precondition). If a needed key is absent, do not invent
+  it — insert `[TODO: similar_cases_search for <topic>]`; if it is present but
+  `pending`, stop and return to the Step 4 quote gate rather than citing it. The
+  target article is the one exception: cite it `[@<target-key>]` after its
   manual `@article` block (built from the Step 2 ledger) has been added to
-  `refs.bib`.
+  `refs.bib`; its fidelity is gated by `target_article_ledger.md`, not by
+  `reference_quotes.md`.
 - **Constructive tone**: open each critique by acknowledging the point's
   context, state the issue with evidence, and phrase it as something the
   field (or a future study) can address. No ad hominem, no "the authors
