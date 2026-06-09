@@ -25,3 +25,12 @@ AI アシスタントは、ユーザーから明示された場合を除き、`p
 - 自験データ・症例を含むレターはこの Skill の対象外。その場合は `case_report_workflow` を使う。
 
 個別の作業 (生成済みレターの査読だけ など) は、対応する単体 Skill を直接呼ぶ。レター固有の査読は `letter_review_simulator` Skill (`skills/letter_review_simulator/SKILL.md`)。
+
+## PubMed 文献検索 (検索式は projects 配下に保存)
+
+レターやケースレポートの文献検索は、コミット済みの汎用スクリプト `skills/similar_cases_search/scripts/pubmed_search.py` を使う。Web 検索ツールを持たないモデル (例: 検索できない Gemini) に作業を渡しても、このスクリプトを実行すれば PubMed から根拠付き BibTeX を得られる。
+
+- **検索式 (query) はリポジトリに置かず、gitignore された `projects/<name>/searches/<topic>.query.txt` に保存**してから使う。リポジトリにはエンジンだけを置き、案件固有の検索内容で汚さない。
+- `search` サブコマンドはレビュー用ステージング `searches/<topic>.candidates.md` を出力する (これは `.bib` ではない)。`add` サブコマンドだけが、著者承認済み PMID をレンダリング正本の `refs.bib` に追記する。野良 `.bib` を作らないので、pandoc レンダリング時の取り違えを防ぐ。
+- NCBI コンタクトメールはハードコードしない。`--email` か環境変数 `$NCBI_EMAIL` で渡す。
+- 使い方の詳細は `skills/similar_cases_search/scripts/README.md`。

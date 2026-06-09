@@ -90,6 +90,53 @@ User says something like:
 
 ## Procedure
 
+### 0. Reusable script vs. inline calls
+
+This skill ships a committed, stdlib-only engine at
+[`scripts/pubmed_search.py`](scripts/pubmed_search.py) (see
+[`scripts/README.md`](scripts/README.md)). **Prefer the script** — it lets any
+assistant produce grounded BibTeX by running one command, including assistants
+with no web-search tool (e.g. when a letter is delegated to a model that cannot
+browse). The inline `curl` + Python recipe in steps 2–3 below is the manual
+fallback when the script cannot run.
+
+The script splits the work to keep search output from ever being confused with
+the manuscript's render bibliography:
+
+- `search` reads a **search formula saved in the project folder** and writes a
+  `<topic>.candidates.md` **staging** file (a candidates table + verbatim
+  quotes + BibTeX blocks). It is **not** a `.bib`.
+- `add` appends **author-approved** PMIDs to the single render `refs.bib`. It
+  is the only command that writes a `.bib`.
+
+Keep the case-specific search formula and its output in the git-ignored project
+folder, so the repo stays clean (per the repo `CLAUDE.md`, `projects/*` is
+Git-ignored):
+
+```
+projects/<name>/
+  searches/<topic>.query.txt        # the search formula (input)
+  searches/<topic>.candidates.md    # the search output (staging; NOT a .bib)
+  refs.bib                          # the single render bibliography (add appends here)
+```
+
+When using the script, step 1 below (build + surface the query) and step 4
+(show candidates, get author approval) still apply — write the agreed query to
+`searches/<topic>.query.txt`, run `search`, surface the candidates.md, then run
+`add` only for the PMIDs the author approves. The NCBI email comes from
+`--email` or `$NCBI_EMAIL` (never hardcoded). Step 6 (`citation_verify`) is
+unchanged.
+
+```bash
+export NCBI_EMAIL=you@example.com
+python skills/similar_cases_search/scripts/pubmed_search.py search \
+  --query-file projects/<name>/searches/<topic>.query.txt \
+  --mode background_literature --max 5 --highlight confounding,indication
+# ...author reviews <topic>.candidates.md and approves PMIDs...
+python skills/similar_cases_search/scripts/pubmed_search.py add \
+  --pmids 12345678,23456789 --bib projects/<name>/refs.bib
+```
+
 ### 1. Build the PubMed query
 
 Convert the case features into a PubMed query string. The filter clauses

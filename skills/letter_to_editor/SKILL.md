@@ -150,8 +150,12 @@ repository CLAUDE.md, `projects/*` is Git-ignored working space; do not add
 these files to Git unless the author explicitly asks. Artifacts written:
 `draft.md`, `refs.bib`, `reference_quotes.md` (verbatim supporting quotes for
 the approved references, saved by `similar_cases_search` so the author can
-review them later), `target_article_ledger.md`, `handoff.md`. The
-author-placed target-article file stays as-is (read-only).
+review them later), `target_article_ledger.md`, `handoff.md`, and a
+`searches/` subfolder holding the literature-search formulas and their staging
+output (`searches/<topic>.query.txt` + `searches/<topic>.candidates.md`; see
+Step 4). The author-placed target-article file stays as-is (read-only). All of
+this lives under the Git-ignored project folder, so the search formulas never
+pollute the repo.
 
 ## State tracking
 
@@ -266,12 +270,24 @@ need) and confirm with the author before Step 4.
 Confirm or collect the NCBI email. Invoke `similar_cases_search` with
 `search_mode: background_literature`, querying for the references identified
 in Step 3 (methodological references on the relevant bias/spin pattern, and
-any study that contradicts the target article's overstated claim). Surface
-the candidates table **with a verbatim supporting quote for every candidate**
-(per `similar_cases_search` step 4 — title-only listings are not acceptable),
-so the author can verify relevance from the abstract text before choosing
-which PMIDs to keep. Approved entries are appended to `refs.bib` by
-`similar_cases_search` itself.
+any study that contradicts the target article's overstated claim).
+
+**Save the search formula in the project folder, not in chat.** Write each
+agreed query to `projects/<name>/searches/<topic>.query.txt`, then run the
+committed engine
+[`similar_cases_search/scripts/pubmed_search.py`](../similar_cases_search/scripts/pubmed_search.py)
+(`search` subcommand) so the search works even when the drafting is delegated
+to a model that cannot browse the web. The script writes a
+`searches/<topic>.candidates.md` **staging** file (not a `.bib`); only the
+`add` subcommand appends author-approved PMIDs to the single render `refs.bib`,
+so search output never gets confused with the render bibliography. The NCBI
+email comes from `--email` or `$NCBI_EMAIL`.
+
+Surface the candidates table **with a verbatim supporting quote for every
+candidate** (per `similar_cases_search` step 4 — title-only listings are not
+acceptable), so the author can verify relevance from the abstract text before
+choosing which PMIDs to keep. Approved entries are appended to `refs.bib` via
+the script's `add` subcommand (or by `similar_cases_search` itself).
 
 This step is **mandatory** — do not skip it. If the email is unavailable,
 ask for it; do not bypass the search. If a genuinely strong critique needs
