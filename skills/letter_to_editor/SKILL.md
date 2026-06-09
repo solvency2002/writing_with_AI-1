@@ -148,8 +148,10 @@ Implied default: `projects/<name>/` where `<name>` is derived from the memo
 or the target article's topic, confirmed with the author at Step 1. Per the
 repository CLAUDE.md, `projects/*` is Git-ignored working space; do not add
 these files to Git unless the author explicitly asks. Artifacts written:
-`draft.md`, `refs.bib`, `handoff.md`. The author-placed target-article file
-stays as-is (read-only).
+`draft.md`, `refs.bib`, `reference_quotes.md` (verbatim supporting quotes for
+the approved references, saved by `similar_cases_search` so the author can
+review them later), `target_article_ledger.md`, `handoff.md`. The
+author-placed target-article file stays as-is (read-only).
 
 ## State tracking
 
@@ -265,8 +267,11 @@ Confirm or collect the NCBI email. Invoke `similar_cases_search` with
 `search_mode: background_literature`, querying for the references identified
 in Step 3 (methodological references on the relevant bias/spin pattern, and
 any study that contradicts the target article's overstated claim). Surface
-the candidates table; the author chooses which PMIDs to keep. Approved
-entries are appended to `refs.bib` by `similar_cases_search` itself.
+the candidates table **with a verbatim supporting quote for every candidate**
+(per `similar_cases_search` step 4 — title-only listings are not acceptable),
+so the author can verify relevance from the abstract text before choosing
+which PMIDs to keep. Approved entries are appended to `refs.bib` by
+`similar_cases_search` itself.
 
 This step is **mandatory** — do not skip it. If the email is unavailable,
 ask for it; do not bypass the search. If a genuinely strong critique needs
@@ -306,7 +311,8 @@ contribution, grounded in its real strengths.>
 <P2 — critique 1: topic sentence states the bias/spin; then the
 author-confirmed quote (paraphrased fairly or quoted with quotation marks);
 then why it distorts the conclusion; then the constructive implication.
-Cite @pmid<PMID> where a verified reference supports the point.>
+Cite the supporting reference with a pandoc citation key, e.g. [@pmid<PMID>].
+Cite the target article itself as [@<target-key>].>
 
 <P3 — critique 2: same shape, a distinct point.>
 
@@ -315,11 +321,29 @@ Cite @pmid<PMID> where a verified reference supports the point.>
 Sincerely,
 <author block — name, affiliation, corresponding-author contact, from the
 memo or asked at this step>
-
-## References
-1. <Author. Year. Journal.>  (target article — the article being responded to)
-2. <Author. Year. Journal.>  (@pmid<PMID> from refs.bib)
 ```
+
+**References are not hand-written in `draft.md`.** The letter is rendered
+later with pandoc, which builds the reference list from `refs.bib` and a CSL
+style at render time. Therefore:
+
+- Cite with **pandoc citation keys in square brackets**: `[@pmid<PMID>]` for a
+  single source, `[@pmid<A>; @pmid<B>]` for several. Do **not** write numbered
+  `[1]`/`[2]` markers and do **not** append a `## References` section to
+  `draft.md`. The R8 "References list format" rule in `style_discipline.md` is
+  satisfied by pandoc's rendered output, not by text in `draft.md`.
+- The **target article must also be a `refs.bib` entry** so pandoc can cite it.
+  Add it to `refs.bib` as a manual `@article` block whose fields come from the
+  Step 2 ledger (first author, year, journal, title, volume/issue/pages, DOI),
+  with a stable citekey (e.g. `<firstauthor><year>`), and cite it `[@<key>]`.
+  Because the target article is often very recent, `citation_verify` may return
+  `not_found` for this one key; that is expected for a just-published article.
+  Record it in the state and do not treat it as a blocking failure (the author
+  confirmed the article's identity at the Step 2 quote gate).
+- Optionally leave a one-line comment at the bottom of `draft.md` recording the
+  intended render command, e.g.
+  `<!-- render: pandoc draft.md --citeproc --bibliography refs.bib --csl <style>.csl -o letter.docx -->`,
+  so the author knows how the bibliography is produced.
 
 Drafting rules:
 
@@ -329,11 +353,12 @@ Drafting rules:
   characterization the ledger does not support, insert
   `[TODO: confirm target-article wording for <point>]` instead of inventing
   it.
-- **Citation discipline**: cite only `@pmid<PMID>` keys that exist in
-  `refs.bib`. Grep `refs.bib` before each citation; if a key is absent, do
-  not invent it — insert `[TODO: similar_cases_search for <topic>]`. The
-  target article itself is cited as reference 1 (it has its own bibliographic
-  line from the ledger; it is the thing being responded to).
+- **Citation discipline**: cite only pandoc keys `[@<key>]` whose `<key>`
+  exists in `refs.bib`. Grep `refs.bib` before each citation; if a key is
+  absent, do not invent it — insert `[TODO: similar_cases_search for <topic>]`.
+  The target article is cited the same way, `[@<target-key>]`, after its
+  manual `@article` block (built from the Step 2 ledger) has been added to
+  `refs.bib`.
 - **Constructive tone**: open each critique by acknowledging the point's
   context, state the issue with evidence, and phrase it as something the
   field (or a future study) can address. No ad hominem, no "the authors
@@ -359,10 +384,18 @@ At the end of Step 6, run the **style self-check** from
 4. Banned-term grep returns `0` for each of `significant`, `demonstrated`,
    `caused`, `led to`, `contributed to`, `clearly`, `obviously`,
    `^[Hh]owever,`.
+5. `draft.md` contains **no** `## References` section and **no** numbered
+   `[1]`/`[2]` citation markers; every citation is a pandoc key `[@<key>]`.
+6. Every `[@<key>]` cited in `draft.md` exists in `refs.bib` (Grep the keys),
+   including the target-article key.
 
-Also count words, references, and `[TODO: ...]` placeholders, and surface all
-counts in the state block. Fix any style-self-check failure before emitting.
-Over-limit word/reference counts are a flag for Step 8.
+Also count words, the number of distinct cited keys (`[@<key>]`), and
+`[TODO: ...]` placeholders, and surface all counts in the state block. Word
+count is body text only (the rendered reference list is produced by pandoc and
+is not in `draft.md`); when checking the journal's "including references"
+limit, add the expected rendered reference lines. Fix any style-self-check
+failure before emitting. Over-limit word/reference counts are a flag for
+Step 8.
 
 ### Step 7 — Review
 
@@ -416,9 +449,12 @@ change, em-dash count, long-sentence ratio before/after) in the state block.
 ### Step 9 — Citation verify (final) and limits recheck
 
 1. Re-invoke `citation_verify` on the updated `refs.bib`. Confirm every
-   `@pmid<PMID>` cited in `draft.md` exists in `refs.bib`, and that
+   pandoc key `[@<key>]` cited in `draft.md` exists in `refs.bib`, and that
    `citation_verify` returns zero `likely_wrong` / `not_found` /
-   `retraction` for the cited keys. Loop back to Step 8 for any failure.
+   `retraction` for the cited keys. Loop back to Step 8 for any failure. The
+   single exception is the just-published target-article key, which may legit-
+   imately return `not_found` because it is not yet indexed; record that and
+   do not loop on it (its identity was confirmed at the Step 2 quote gate).
 2. Recheck word and reference counts against the Step 1 limits. If over,
    loop back to Step 8. If the limits were "unconfirmed", record that the
    recheck could not be performed and carry the warning to the hand-off.
@@ -455,9 +491,14 @@ workflow is complete.
 2. **`draft.md` writes only at Step 6 and Step 8.** Every other step is
    read-only on the letter.
 3. **No invented citations.** Supporting references come through
-   `similar_cases_search` and are verified by `citation_verify`. Any
-   `@article` block written outside that path is a workflow failure. The
-   target article's own bibliographic line comes from the Step 2 ledger.
+   `similar_cases_search` and are verified by `citation_verify`. Every
+   candidate is surfaced with a verbatim supporting quote before approval. The
+   only `@article` block written by hand is the target article itself, built
+   from the Step 2 ledger and added to `refs.bib` so pandoc can cite it; any
+   other hand-written `@article` block is a workflow failure.
+3a. **Pandoc-style citations, no hand-written reference list.** Prose cites
+   `[@<key>]` keys; `draft.md` has no `## References` section and no numbered
+   markers. Pandoc renders the bibliography from `refs.bib` at the end.
 4. **No misrepresentation of the target article.** Every claim about what the
    article said must trace to a verbatim quote in the Step 2 ledger, and the
    passages must have passed the Step 2 quote-verification gate. Unsupported
@@ -519,9 +560,11 @@ next gate (proceed / revise / skip).
 3. Does every "the article states X" sentence in `draft.md` trace to a
    verbatim quote in `target_article_ledger.md`?
 4. Did `draft.md` get written only at Step 6 and Step 8?
-5. Are all `@pmid<PMID>` citations in `draft.md` present in `refs.bib`
-   (Grep confirms)?
-6. Did `citation_verify` run at Step 9 and return clean for cited keys?
+5. Are all pandoc `[@<key>]` citations in `draft.md` (including the target-
+   article key) present in `refs.bib` (Grep confirms), with no `## References`
+   section and no numbered markers in `draft.md`?
+6. Did `citation_verify` run at Step 9 and return clean for cited keys (target-
+   article `not_found` excepted, if just-published and recorded)?
 7. Is the letter within the confirmed word/reference limits (or is the
    "unconfirmed limits" warning carried to the hand-off)?
 8. Does the letter have P1 + P2 + P3 (or a recorded deviation), with P2 and
@@ -543,10 +586,13 @@ A regression fixture lives at `skills/letter_to_editor/tests/`:
   quotable verbatim. (Synthetic fixture; PMIDs are illustrative.)
 - `tests/fixture_refs.bib` — two PMID BibTeX entries: one methodological
   reference on confounding by indication, one on spin in non-randomized
-  studies. (Synthetic fixture.)
+  studies, **plus a manual entry for the target article** (so the pandoc
+  target-article key resolves). (Synthetic fixture.)
 - `tests/expected_draft.md` — the three-paragraph letter the skill should
   emit (P1 praise; P2 = B1 confounding; P3 = S4/S1 subgroup spin), within a
-  300-word / 5-reference limit.
+  300-word / 5-reference limit. Citations are pandoc keys `[@<key>]`; the
+  letter has **no** `## References` section (pandoc renders it from
+  `fixture_refs.bib`).
 - `tests/expected_handoff.md` — the expected hand-off package contents.
 
 Self-test procedure:
@@ -564,8 +610,9 @@ Pass criteria:
 - The letter has exactly P1 + P2 + P3, with P2 coded B1 and P3 coded S4/S1.
 - Every "the authors conclude/report X" sentence maps to a verbatim quote in
   `fixture_target_article.md`.
-- Every `@pmid<PMID>` in the letter appears in `fixture_refs.bib` (FP = 0 on
-  invented citations).
+- Every pandoc key `[@<key>]` in the letter appears in `fixture_refs.bib`
+  (FP = 0 on invented citations); the letter has no `## References` section and
+  no numbered citation markers.
 - The letter is ≤ 300 words and cites ≤ 5 references (the fixture limits).
 - `grep -c '—'` on the letter returns `0`; no banned terms; long-sentence
   ratio ≤ 15 %.

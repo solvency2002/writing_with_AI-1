@@ -179,11 +179,23 @@ makes the PMID auditable from the key alone.
 **Omit, don't invent**: if `doi` or `volume` is missing from the XML, leave the
 field out. Never fill in a placeholder.
 
+**Also extract a display quote (not a BibTeX field).** From each record's
+`MedlineCitation/Article/Abstract/AbstractText`, pull one **verbatim** sentence
+or fragment (≤ 40 words) that shows *why* this reference supports the intended
+point. This quote is surfaced to the author in step 4 so they can judge
+relevance from the source text, not from the title alone. It is **not** written
+into `refs.bib`. If a record has no abstract, mark the quote
+`[no abstract available]`. Copy the quote verbatim from the efetch XML; never
+paraphrase it, so it stays auditable.
+
 ### 4. Show candidates to the user
 
 Emit a compact summary table **before** writing to `refs.bib`. Include the
 mode in the header so the author can distinguish similar-case hits from
-background-literature hits when both modes have been run:
+background-literature hits when both modes have been run. **Every candidate
+must be shown with a verbatim supporting quote** (from step 3) so the author
+can verify relevance from the abstract text, not the title alone; listing a
+reference without a grounding quote is not acceptable:
 
 ```markdown
 ## similar-cases-search candidates
@@ -196,7 +208,10 @@ Total hits: 47 (showing top 5 by relevance)
 |---|---|---|---|---|---|
 | 1 | 12345678 | 2021 | BMJ Case Rep | case-report | Daptomycin-induced eosinophilic pneumonia in ... |
 | 2 | 23456789 | 2019 | Chest | case-report | A case of eosinophilic pneumonia after ... |
-| ... |
+
+Supporting quotes (verbatim from each abstract):
+- **#1 (PMID 12345678)**: "<verbatim sentence showing why this supports the point>"
+- **#2 (PMID 23456789)**: "<verbatim sentence showing why this supports the point>"
 ```
 
 In `background_literature` mode, the `Type` column reflects PubMed's
@@ -234,6 +249,23 @@ Example block to append:
   pmid = {12345678}
 }
 ```
+
+**Persist the supporting quotes.** The verbatim quote shown for each candidate
+is display-only for `refs.bib`, but it must not vanish into chat history. After
+the author approves, append each approved entry's quote to
+`reference_quotes.md` in the same directory as `refs.bib` (Edit/Write, append
+only, never overwrite). One block per citation key:
+
+```markdown
+## @pmid12345678 — <Journal Year>
+- Quote (verbatim): "<the abstract sentence shown at step 4>"
+- Supports: <one line: which point this reference grounds>
+```
+
+If a record had no abstract, record `Quote (verbatim): [no abstract available]`
+and note why it was still chosen (e.g., the title states the methodological
+standard). This file is where the author reviews the quotes later; keep it in
+sync with the approved `refs.bib` entries.
 
 ### 6. Verify by delegating to `citation_verify`
 
@@ -282,7 +314,11 @@ author needs to act on. `found`-only outcomes are silent successes.
    line (and the `likely_wrong` / `not_found` / `retraction` tables when
    non-zero) into this skill's final message.
 7. **Never edit `draft.md` from this skill.** This skill only adds to
-   `refs.bib`. The author decides where in the manuscript to cite each entry.
+   `refs.bib` (and the companion `reference_quotes.md`). The author decides
+   where in the manuscript to cite each entry.
+8. **Persist supporting quotes to `reference_quotes.md`.** Quotes are
+   display-only for `refs.bib` but must be saved alongside it so the author can
+   review them later, not only in chat.
 
 ## Output format
 
@@ -290,9 +326,12 @@ The final assistant message must contain, in this order:
 
 1. The `search_mode` used (`similar_cases` or `background_literature`).
 2. The PubMed query string (the exact `term=` value used).
-3. The candidates table (from step 4).
+3. The candidates table (from step 4), **with a verbatim supporting quote for
+   every candidate** (title-only listings are not acceptable).
 4. The list of PMIDs the user approved.
-5. The BibTeX block appended to `refs.bib` (for copy-paste audit).
+5. The BibTeX block appended to `refs.bib` (for copy-paste audit), and the
+   path to `reference_quotes.md` where the approved entries' verbatim quotes
+   were saved.
 6. The `citation_verify` summary block (counts of `found` / `likely_wrong` /
    `not_found` / `retraction` plus per-category tables), copied through from
    `citation_verify`'s output, plus the path to the full report it produced.
@@ -317,13 +356,16 @@ The final assistant message must contain, in this order:
 
 1. Did every emitted BibTeX entry come from a PubMed XML record fetched in
    this session? (If "from memory" — start over.)
-2. Is the citation key `pmid<PMID>` for every entry?
-3. Did you append (not overwrite) `refs.bib`?
-4. Did you hand off to `citation_verify` (not run citeguard yourself) and
+2. Did you show a **verbatim supporting quote** for every candidate before the
+   author approved it (title-only listing = redo), and **save the approved
+   quotes to `reference_quotes.md`** so they outlive the chat?
+3. Is the citation key `pmid<PMID>` for every entry?
+4. Did you append (not overwrite) `refs.bib`?
+5. Did you hand off to `citation_verify` (not run citeguard yourself) and
    read its summary?
-5. Did you transcribe the `citation_verify` counts (and the non-zero
+6. Did you transcribe the `citation_verify` counts (and the non-zero
    per-category tables) into this skill's final message?
-6. Did you avoid editing `draft.md`?
+7. Did you avoid editing `draft.md`?
 
 ## Testing this skill
 
