@@ -149,9 +149,11 @@ or the target article's topic, confirmed with the author at Step 1. Per the
 repository CLAUDE.md, `projects/*` is Git-ignored working space; do not add
 these files to Git unless the author explicitly asks. Artifacts written:
 `draft.md`, `refs.bib`, `reference_quotes.md` (the **reference quote gate** —
-one row per supporting citation: citekey, the draft claim it backs, a verbatim
-quote from the abstract, location, and a `status` of `pending` or `approved`;
-drafting may only cite `approved` rows — see Steps 4 and 6),
+one block per supporting citation, in the canonical format written by
+`similar_cases_search`: citekey heading, `Claim`, `Quote (verbatim)`,
+`Location`, and `Status: pending | approved`; "row" elsewhere in this file
+means one such block; drafting may only cite `approved` rows — see Steps 4
+and 6),
 `target_article_ledger.md`, `handoff.md`, and a
 `searches/` subfolder holding the literature-search formulas and their staging
 output (`searches/<topic>.query.txt` + `searches/<topic>.candidates.md`; see
@@ -295,11 +297,11 @@ choosing which PMIDs to keep. Approved entries are appended to `refs.bib` via
 the script's `add` subcommand (or by `similar_cases_search` itself).
 
 **Then run the reference quote gate** (this is the part most easily skipped —
-do not skip it). For every key appended to `refs.bib`, write a row into
-`reference_quotes.md` with `status: pending`, recording the citekey, the exact
-draft claim the citation is meant to back, the verbatim abstract quote, and its
-location. Then emit the gate to the author, in the same shape as the Step 2
-quote gate:
+do not skip it). For every key appended to `refs.bib`, ensure a block exists in
+`reference_quotes.md` in the canonical format (`similar_cases_search` writes it
+with `Status: pending` when it appends); fill in the `Claim` field with the
+exact draft sentence the citation is meant to back if it is still generic. Then
+emit the gate to the author, in the same shape as the Step 2 quote gate:
 
 ```markdown
 #### 参照文献の quote ゲート
@@ -468,6 +470,10 @@ Invoke three reviews on the drafted letter (read-only on `draft.md`):
   P2/P3.
 - `proofread-manuscript` — English prose style (the `style_discipline.md`
   rules). Skip this invocation if the letter is in Japanese.
+  **Fallback**: this is a user-level skill not shipped with the repository.
+  If it is not available in the session, do not stop — run the
+  `style_discipline.md` self-check (grep-based) yourself and use its
+  findings as the Style items; record the fallback in the state.
 - A **limits check** — compare the Step 6 word and reference counts against
   the Step 1 limits. Over-limit is a punch-list item.
 
@@ -614,6 +620,7 @@ next gate (proceed / revise / skip).
 | `draft.md` already exists at Step 6 | Do not overwrite. Surface it; ask whether to revise the existing file (skip to Step 7) or start a new folder. |
 | `letter_review_simulator` flags the letter mischaracterizing the article | Treat as a Major item. Step 8 rewrite must re-ground the claim in a confirmed quote or drop it. |
 | Author wants to skip the praise paragraph (P1) | Allowed as a recorded deviation, but surface once that editors weight constructive framing; default is to keep P1. |
+| `proofread-manuscript` unavailable (user-level skill, not shipped with this repo) | Do not stop. Run the `style_discipline.md` self-check instead and use its findings as the Style items. Record the fallback in the state. |
 
 ## Self-check before returning at hand-off
 
@@ -693,7 +700,8 @@ Pass criteria:
   3. [letter_review_simulator](../letter_review_simulator/SKILL.md) — Step 7.
   4. `proofread-manuscript` — Step 7 (user-level skill in
      `~/.claude/skills/proofread-manuscript/`; invoke via the `Skill` tool;
-     skip for Japanese letters).
+     skip for Japanese letters; if not installed, fall back to the
+     `style_discipline.md` self-check — see Step 7).
 - This orchestrator follows the same "Markdown is the source of truth, AI
   does partial revisions" discipline as
   [case_report_workflow](../case_report_workflow/SKILL.md), and the same

@@ -39,8 +39,10 @@ User says something like:
 
 ## Inputs
 
-- **Required**: path to `refs.bib` (default: `demo/refs.bib`). If the file does
-  not exist, stop and tell the user.
+- **Required**: path to `refs.bib`. Default: the `refs.bib` adjacent to the
+  manuscript being worked on (`projects/<name>/refs.bib`); `demo/refs.bib`
+  is for workshop practice only. If the path is ambiguous, ask the caller.
+  If the file does not exist, stop and tell the user.
 - **Required**: NCBI E-utilities contact email. If unknown, ask once via
   `AskUserQuestion` and reuse for the session.
 - **Optional**: list of specific citation keys to verify (default: all

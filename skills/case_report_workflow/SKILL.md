@@ -83,8 +83,10 @@ single-step request.**
     `submission_guidelines_check`).
   - Article type (for `peer_review_simulator`): one of `single_case`,
     `surgical_case`, `case_series`, `image_case`, `diagnostic_challenge`.
-- **Optional**: existing `refs.bib` path (default: `demo/refs.bib` for
-  workshop sessions; otherwise expect `projects/<name>/refs.bib`).
+- **Optional**: existing `refs.bib` path (default:
+  `projects/<name>/refs.bib`, alongside the manuscript; `demo/refs.bib`
+  only for workshop practice sessions — never append real-case citations
+  to it).
 
 Collect inputs lazily — ask only when the step that needs them is reached.
 Do not block the workflow at step 1 collecting every input upfront.
@@ -363,6 +365,12 @@ The three skills cover non-overlapping concerns by design:
   length, active voice, banned terms (the rules from
   [`style_discipline.md`](style_discipline.md)). Pass the file as
   English; skip this invocation if the draft is in Japanese.
+  **Fallback**: this is a user-level skill not shipped with the
+  repository. If it is not available in the session, do **not** stop —
+  run the [`style_discipline.md`](style_discipline.md) self-check
+  (grep-based) yourself and use its findings as the Style punch-list
+  items. Record `proofread-manuscript: unavailable — style_discipline
+  self-check used` in the workflow state.
 
 If the confirmed article type is not `single_case`, ensure the
 "Article-type scope" warning is in the workflow state and **treat every
@@ -546,7 +554,8 @@ For intermediate messages during the workflow, surface:
 
 | Failure | Handling |
 |---|---|
-| Sub-skill not available (file missing, etc.) | Surface which skill is missing. Stop. Do not silently bypass. |
+| Sub-skill not available (file missing, etc.) | Surface which skill is missing. Stop. Do not silently bypass. (Exception: `proofread-manuscript` — see next row.) |
+| `proofread-manuscript` unavailable (user-level skill, not shipped with this repo) | Do not stop. Run the `style_discipline.md` self-check instead and use its findings as the Style punch-list. Record the fallback in the workflow state. |
 | `citation_verify` returns non-zero failures and the author overrides | Record the override in state with the author's one-line justification; require it again at Step 13. |
 | Author wants to skip Step 3 (deidentify) at the start | Allowed at start. The orchestrator loops back to run it before Step 14. If still skipped at Step 14, the workflow does **not** complete — issue a hard stop. |
 | Author already has a complete `draft.md` at workflow start | Skip Step 9. Steps 10–14 run normally. State row 9 = `skipped (draft pre-existed)`. Step 2 still runs, extracting the ledger from the draft for Step 11 traceability. |
@@ -629,7 +638,8 @@ In invocation order:
    `proofread-manuscript` (parallel) — Step 10. `proofread-manuscript`
    is a user-level skill (lives in `~/.claude/skills/proofread-manuscript/`,
    not in this repo); invoke via the `Skill` tool. Skip it for
-   Japanese-language drafts.
+   Japanese-language drafts. If it is not installed, fall back to the
+   `style_discipline.md` self-check (see Step 10).
 9. (Step 11 = revision, no sub-skill; may re-invoke
    `similar_cases_search` if Major comments require new literature.
    Auto-applies `proofread-manuscript`'s style punch-list per

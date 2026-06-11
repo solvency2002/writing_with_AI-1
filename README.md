@@ -200,20 +200,24 @@ powershell -ExecutionPolicy Bypass -File demo/render_docx.ps1
 │       └── draft.docx           # pandocで生成済みの完成見本
 ├── projects/                    # 実際の執筆プロジェクト置き場
 │   └── .gitkeep                 # projects/ 自体を残すための空ファイル
-└── skills/
-    ├── humanizer_academic/      # 文体調整 Skill (スライド §7)
-    │   └── SKILL.md
-    ├── render_and_upload/       # Markdown → Google Docs Skill (スライド §9)
-    │   └── SKILL.md
-    ├── fetch_gdoc_changes/      # Google Docs の編集を取り込む Skill (スライド §10)
-    │   └── SKILL.md
-    ├── deidentify_check/        # 症例報告の個人情報チェック Skill
-    │   ├── SKILL.md
-    │   └── tests/               # fixture_draft.md + expected_findings.md
-    └── similar_cases_search/    # PubMed 類似症例検索 → refs.bib 候補 Skill
-        ├── SKILL.md
-        └── tests/               # fixture_efetch.xml + expected_refs.bib
+└── skills/                          # AI アシスタント用 Skill 群 (使い分けは CLAUDE.md 参照)
+    ├── case_report_workflow/        # 症例報告のエンドツーエンド・オーケストレータ (+ style_discipline.md = 英文スタイル正本)
+    ├── letter_to_editor/            # Letter to the Editor オーケストレータ (日本語メモ → 英文レター)
+    ├── similar_cases_search/        # PubMed 検索 → refs.bib 候補 (scripts/pubmed_search.py)
+    ├── citation_verify/             # refs.bib を citeguard で Crossref/PubMed 照合
+    ├── bottom_line_message/         # 松原メソッド「2つのわかったこと」抽出
+    ├── care_check/                  # CARE 2013 チェックリスト監査
+    ├── deidentify_check/            # 症例報告の個人情報チェック
+    ├── case_timeline/               # 経過の Mermaid timeline 図化
+    ├── peer_review_simulator/       # 症例報告の査読シミュレーション (非 CARE)
+    ├── letter_review_simulator/     # レターの査読シミュレーション
+    ├── submission_guidelines_check/ # 投稿規定の抽出・照合
+    ├── humanizer_academic/          # AI 文体の除去 (スライド §7)
+    ├── render_and_upload/           # Markdown → docx → Google Docs (スライド §9)
+    └── fetch_gdoc_changes/          # Google Docs の suggestion / コメント取り込み (スライド §10)
 ```
+
+各 Skill の詳細は `skills/<name>/SKILL.md` を参照。多くの Skill は `tests/` に回帰用フィクスチャを持つ。症例報告をゼロから書くときは `case_report_workflow`、既発表論文への批評レターは `letter_to_editor` が起点 (CLAUDE.md 参照)。
 
 ## 実際の原稿を書く場所
 

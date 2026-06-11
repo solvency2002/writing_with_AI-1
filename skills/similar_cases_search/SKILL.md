@@ -78,11 +78,16 @@ User says something like:
     daptomycin"), OR
   - a path to `@draft.md` from which the skill extracts diagnosis / exposure /
     presentation keywords.
-- **Optional**: path to `refs.bib` (default: `demo/refs.bib`). Candidates are
-  appended here after the author approves them. **Both modes append to the
-  same `refs.bib`** — citation keys are `pmid<PMID>` regardless of mode,
-  so downstream skills (`citation_verify`, `bottom_line_message`) treat
-  the two pools uniformly.
+- **Optional**: path to `refs.bib`. Default: the `refs.bib` in the same
+  project folder as the manuscript being worked on
+  (`projects/<name>/refs.bib`). If neither a path nor an active project
+  folder is known, ask the author — do **not** fall back to `demo/refs.bib`
+  silently; `demo/refs.bib` is workshop-practice material only, and
+  appending real-case citations to it pollutes the teaching files.
+  Candidates are appended here after the author approves them. **Both modes
+  append to the same `refs.bib`** — citation keys are `pmid<PMID>`
+  regardless of mode, so downstream skills (`citation_verify`,
+  `bottom_line_message`) treat the two pools uniformly.
 - **Optional**: desired number of candidates (default: 5, max: 20).
 - **Optional**: NCBI API contact email. Required by NCBI E-utilities terms of
   use. If not supplied, ask the user once via `AskUserQuestion` and remember
@@ -308,9 +313,18 @@ only, never overwrite). One block per citation key:
 
 ```markdown
 ## @pmid12345678 — <Journal Year>
+- Claim: "<the draft sentence / point this citation is meant to back>"
 - Quote (verbatim): "<the abstract sentence shown at step 4>"
-- Supports: <one line: which point this reference grounds>
+- Location: <where the quote sits, e.g., abstract conclusions>
+- Status: pending
 ```
+
+This block shape is the **canonical `reference_quotes.md` format**, shared
+with `letter_to_editor`'s reference quote gate. `Status:` always starts as
+`pending`; it flips to `approved` only when the author confirms that the
+quote supports that specific claim — the approval gate lives in the calling
+workflow, not in this skill. Never omit or delete the `Status:` field, and
+never write a block in any other shape (mixed formats break the gate check).
 
 If a record had no abstract, record `Quote (verbatim): [no abstract available]`
 and note why it was still chosen (e.g., the title states the methodological

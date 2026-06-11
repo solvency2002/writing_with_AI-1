@@ -82,8 +82,10 @@ User says something like:
 
 ## Inputs
 
-- **Required**: path to the manuscript (default candidates, in order:
-  `demo/case_report.md`, `demo/draft.md`, the file the user `@`-mentioned).
+- **Required**: path to the manuscript (default candidates, in order: the
+  file the user `@`-mentioned, the manuscript in the active
+  `projects/<name>/` folder, then — workshop practice only —
+  `demo/case_report.md` / `demo/draft.md`).
 - **Optional**: output diagram path. Default:
   - if input is `<dir>/case_report.md` → `<dir>/assets/timeline.mmd`
   - if input is `<dir>/draft.md` → `<dir>/assets/timeline.mmd`

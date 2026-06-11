@@ -90,9 +90,12 @@ User says something like:
 
 - **Required**: a brief case summary. Either the user pastes it, or they point
   to `@draft.md` and you extract the case presentation section.
-- **Required**: a `refs.bib` path (default: `demo/refs.bib`) containing the
-  PMIDs produced by `similar_cases_search` in this or a prior session. If it
-  is empty or absent, stop and recommend running `similar_cases_search`.
+- **Required**: a `refs.bib` path containing the PMIDs produced by
+  `similar_cases_search` in this or a prior session. Default: the `refs.bib`
+  in the same project folder as the manuscript (`projects/<name>/refs.bib`);
+  `demo/refs.bib` is for workshop practice only — if the path is ambiguous,
+  ask the author. If it is empty or absent, stop and recommend running
+  `similar_cases_search`.
 - **Optional**: the `similar_cases_search` candidates table from earlier in
   the conversation (title / journal / year / PMID per row). Re-use it for
   context when proposing which references support which takeaway.
