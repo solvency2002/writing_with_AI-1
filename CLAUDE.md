@@ -26,6 +26,13 @@ AI アシスタントは、ユーザーから明示された場合を除き、`p
 
 個別の作業 (生成済みレターの査読だけ など) は、対応する単体 Skill を直接呼ぶ。レター固有の査読は `letter_review_simulator` Skill (`skills/letter_review_simulator/SKILL.md`)。
 
+## 英文スタイル層の使い分け
+
+英文プローズのルールはリポジトリ内に 2 層ある。重複するルール (em-dash 禁止など) は `style_discipline.md` を正とする。
+
+- **`skills/case_report_workflow/style_discipline.md`** — 英文ドラフトの正本ルール (em-dash 禁止、1 文 ≤ 25 語、能動態、禁止語、引用形式)。`case_report_workflow` / `letter_to_editor` がドラフト生成・改稿時に読む。ルールを変えるときはこのファイルだけを更新する。
+- **`humanizer_academic` Skill** — 既存テキストから AI 文体の痕跡 (AI 語彙、誇張、-ing 付加、synonym cycling など) を除去するときに単体で呼ぶ。オーケストレータのパイプラインには組み込まれていない。「AI っぽさを消して」「文体を自然に」系の依頼はこちら。
+
 ## PubMed 文献検索 (検索式は projects 配下に保存)
 
 レターやケースレポートの文献検索は、コミット済みの汎用スクリプト `skills/similar_cases_search/scripts/pubmed_search.py` を使う。Web 検索ツールを持たないモデル (例: 検索できない Gemini) に作業を渡しても、このスクリプトを実行すれば PubMed から根拠付き BibTeX を得られる。

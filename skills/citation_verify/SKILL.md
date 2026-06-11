@@ -46,7 +46,9 @@ User says something like:
 - **Optional**: list of specific citation keys to verify (default: all
   entries). Use when the caller only wants to re-check the entries it just
   appended.
-- **Optional**: output report path (default: `/tmp/citation_report.md`).
+- **Optional**: output report path (default: `citation_report.md` in the same
+  directory as the input `refs.bib` — platform-neutral; do not default to
+  `/tmp`, which does not exist on Windows).
 
 ## Dependency
 

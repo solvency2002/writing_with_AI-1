@@ -159,3 +159,10 @@ This style discipline is layer 1 of a 3-layer system:
 When updating these rules, update this file and let the other layers
 inherit. Do not duplicate the rules in Step 9 or Step 10 procedure
 text.
+
+Adjacent (not a layer of this system):
+[`humanizer_academic`](../humanizer_academic/SKILL.md) removes
+AI-writing tells from existing text on request. It is invoked
+standalone, outside the orchestrators. Where its patterns overlap with
+the rules here (e.g., the em-dash ban), this file is the source of
+truth.

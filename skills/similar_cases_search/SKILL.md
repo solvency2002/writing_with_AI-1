@@ -94,11 +94,14 @@ User says something like:
 
 This skill ships a committed, stdlib-only engine at
 [`scripts/pubmed_search.py`](scripts/pubmed_search.py) (see
-[`scripts/README.md`](scripts/README.md)). **Prefer the script** — it lets any
-assistant produce grounded BibTeX by running one command, including assistants
-with no web-search tool (e.g. when a letter is delegated to a model that cannot
-browse). The inline `curl` + Python recipe in steps 2–3 below is the manual
-fallback when the script cannot run.
+[`scripts/README.md`](scripts/README.md)). **The script is the primary path** —
+it is stdlib-only Python and runs the same on Windows, macOS, and Linux, and it
+lets any assistant produce grounded BibTeX by running one command, including
+assistants with no web-search tool (e.g. when a letter is delegated to a model
+that cannot browse). The inline `curl` + Python recipe in steps 2–3 below is
+POSIX-only (bash + curl) and is kept as a **manual fallback** for when the
+script cannot run (e.g. a mac/Linux session without the repo checked out). Do
+not start from the curl recipe when the script is available.
 
 The script splits the work to keep search output from ever being confused with
 the manuscript's render bibliography:
@@ -173,7 +176,7 @@ Example construction:
 **Show the user the constructed query** before executing it. If the user
 revises it, use the revised version.
 
-### 2. esearch.fcgi → PMID list
+### 2. esearch.fcgi → PMID list (manual fallback — prefer `scripts/pubmed_search.py`)
 
 Call NCBI E-utilities `esearch.fcgi` to get PMIDs. Use `Bash` with `curl`:
 
@@ -194,7 +197,7 @@ report that to the user and offer to broaden the query (drop one term, switch
 **Rate limits**: NCBI permits 3 requests/sec without an API key. Sleep 0.4s
 between requests in a loop. With an API key, the limit is 10/sec.
 
-### 3. efetch.fcgi → MEDLINE / PubMed XML
+### 3. efetch.fcgi → MEDLINE / PubMed XML (manual fallback — prefer `scripts/pubmed_search.py`)
 
 For each PMID, fetch the full record:
 

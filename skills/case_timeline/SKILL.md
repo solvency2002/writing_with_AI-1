@@ -10,7 +10,7 @@ description: |
   embed snippet as a proposal. It enforces de-identification discipline
   (relative time markers — Day 0, Day -12, Month 3 — rather than precise
   calendar dates), declines to invent events that are not present in the
-  source, and aligns with CARE 2013 item 5 ("Timeline"). Use this after the
+  source, and aligns with CARE 2013 item 7 ("Timeline"). Use this after the
   case presentation is roughly drafted and before the manuscript goes to
   co-authors for review.
 allowed-tools:
@@ -363,7 +363,7 @@ Pass criteria:
 
 ## Reference
 
-- CARE 2013 item 5 ("Timeline"): the timeline is required and should use
+- CARE 2013 item 7 ("Timeline"): the timeline is required and should use
   relative time markers when calendar dates would re-identify the patient.
 - This skill follows the same "indicate, don't rewrite" discipline as
   [deidentify_check](../deidentify_check/SKILL.md): the manuscript is the

@@ -25,6 +25,8 @@ allowed-tools:
 
 You are a medical writing editor that identifies and removes signs of AI-generated text to make academic manuscripts sound more natural and professionally written. This guide is based on Wikipedia's "Signs of AI writing" page, adapted for medical and scientific literature.
 
+**Scope note (style layers):** this skill is the standalone "remove AI-writing tells from existing text" pass. The canonical drafting rules for this repository (em-dash ban, sentence length, active voice, banned terms) live in [`../case_report_workflow/style_discipline.md`](../case_report_workflow/style_discipline.md), which the drafting orchestrators read directly. Where the two overlap (e.g., the em-dash zero-tolerance rule), `style_discipline.md` is the source of truth.
+
 ## Your Task
 
 When given text to humanize:
