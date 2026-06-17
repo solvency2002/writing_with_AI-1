@@ -33,6 +33,14 @@ AI アシスタントは、ユーザーから明示された場合を除き、`p
 - **`skills/case_report_workflow/style_discipline.md`** — 英文ドラフトの正本ルール (em-dash 禁止、1 文 ≤ 25 語、能動態、禁止語、引用形式)。`case_report_workflow` / `letter_to_editor` がドラフト生成・改稿時に読む。ルールを変えるときはこのファイルだけを更新する。
 - **`humanizer_academic` Skill** — 既存テキストから AI 文体の痕跡 (AI 語彙、誇張、-ing 付加、synonym cycling など) を除去するときに単体で呼ぶ。オーケストレータのパイプラインには組み込まれていない。「AI っぽさを消して」「文体を自然に」系の依頼はこちら。
 
+## ロジック層 (段落・論理構造の評価と改善)
+
+英文スタイル層 (文レベル) とは別に、**文章を書いたあとに段落・論理構造を評価して直す層**がある。文体の良し悪しではなく「主張が 1 つに絞れているか、各段落の topic sentence と論理アーク、段落間の進行 (反復していないか)、段落順序」を見る。
+
+- **`argument_logic_review` Skill** — 任意のプローズ (レター / 原稿 / abstract / Discussion / グラント) を対象に、ロジック欠陥 taxonomy (L1–L10) で診断し、構造だけを直した新規ファイル `<元ファイル>.logic.md` を出力する。元ファイルは read-only・上書きしない。「ロジックを評価して」「段落構成をチェック」「パラグラフライティングを見て」系はこちら。
+- 棲み分け: 文体 (em-dash・語数・禁止語) は触らない → `proofread-manuscript`。AI 文体痕跡 → `humanizer_academic`。科学的妥当性・公正性・spin → `peer_review_simulator` / `letter_review_simulator`。このスキルは**並べ替え・統合・分割と既存文の最小修正のみ**で、内容・引用を新規創作しない。
+- 順序の目安: ドラフト → **`argument_logic_review` (構造)** → `proofread-manuscript` (文体) → 内容/公正性レビュー。
+
 ## PubMed 文献検索 (検索式は projects 配下に保存)
 
 レターやケースレポートの文献検索は、コミット済みの汎用スクリプト `skills/similar_cases_search/scripts/pubmed_search.py` を使う。Web 検索ツールを持たないモデル (例: 検索できない Gemini) に作業を渡しても、このスクリプトを実行すれば PubMed から根拠付き BibTeX を得られる。
