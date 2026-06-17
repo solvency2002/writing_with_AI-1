@@ -28,6 +28,45 @@ OSを判定し、結果を1行で宣言する。
 | git | `git --version` | 推奨 |
 | rclone | `rclone version` | 推奨 |
 
+#### インストール直後の「偽陰性」に注意 (pandoc)
+
+`pandoc --version` が「未インストール」と出ても**即断しない**。インストール直後は、すでに起動しているシェル (AI のツールセッションや IDE 内ターミナル) が新しい PATH を拾えておらず、入っているのに見つからないことがある。「未インストール」と報告する前に、AI は次を順に試す。
+
+**Windows:**
+
+- (a) 現セッションの PATH をレジストリから再読込する (シェルを閉じずに反映)。
+
+  ```powershell
+  $env:Path = [Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [Environment]::GetEnvironmentVariable("Path","User")
+  pandoc --version
+  ```
+
+- (b) それでも見つからなければ既知のインストール先を直接探索し、見つかればフルパスで実行する。
+
+  ```powershell
+  @("$env:ProgramFiles\Pandoc\pandoc.exe","$env:LOCALAPPDATA\Pandoc\pandoc.exe","$env:LOCALAPPDATA\Microsoft\WinGet\Links\pandoc.exe") | Where-Object { Test-Path $_ }
+  # 見つかったパスで:  & "<path>" --version
+  ```
+
+**macOS:**
+
+- (a) Homebrew の環境を現シェルに反映する (Apple Silicon / Intel 両対応)。
+
+  ```bash
+  if [ -x /opt/homebrew/bin/brew ]; then eval "$(/opt/homebrew/bin/brew shellenv)"; \
+  elif [ -x /usr/local/bin/brew ]; then eval "$(/usr/local/bin/brew shellenv)"; fi
+  pandoc --version
+  ```
+
+- (b) それでも見つからなければ既知のインストール先を直接探索し、見つかればフルパスで実行する。
+
+  ```bash
+  for p in /opt/homebrew/bin/pandoc /usr/local/bin/pandoc; do [ -x "$p" ] && echo "$p"; done
+  # 見つかったパスで:  <path> --version
+  ```
+
+(a) または (b) で動いた場合は「**インストール済みだが PATH 未反映**」として切り分けて報告する (下記サマリー参照)。
+
 ### 3. rclone × Google Drive 接続確認 (rclone がインストール済みの場合のみ)
 
 `rclone version` が通った場合、以下を順に実行する。`rclone` 自体が未インストールの場合はこのステップを丸ごとスキップする。
@@ -56,7 +95,7 @@ OSを判定し、結果を1行で宣言する。
 
 ```text
 OS:            <Windows 11 | macOS 14.5 | ...>
-pandoc:        <2.x.x | 未インストール → 手順を上に提示>
+pandoc:        <2.x.x | インストール済みだが PATH 未反映 → シェル/ターミナル(または IDE)再起動が必要 | 未インストール → 手順を上に提示>
 git:           <2.x.x | 未インストール → 手順を上に提示>
 rclone:        <1.x.x | 未インストール → 手順を上に提示 / スキップ (任意)>
 gdrive remote: <設定済み (接続OK) | 未設定 → 手順を上に提示 | スキップ (rcloneが無い場合)>
@@ -88,7 +127,14 @@ choco install pandoc -y
 pandoc --version
 ```
 
-> `pandoc` がコマンドとして見つからない場合は、PowerShell を一度閉じて開き直す。新しいシェルを開き直さないと PATH が更新されないことがある。
+> `pandoc` がコマンドとして見つからない場合、まず現在のシェルで PATH を再読込する。閉じて開き直す前に次のワンライナーを試すと、シェルを閉じずに反映できる。
+>
+> ```powershell
+> $env:Path = [Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [Environment]::GetEnvironmentVariable("Path","User")
+> pandoc --version
+> ```
+>
+> それでも見つからなければ PowerShell を一度閉じて開き直す。IDE 内ターミナルを使っている場合は、IDE 自体を再起動しないと PATH が反映されないことがある。
 
 ### macOS: pandoc
 
@@ -109,6 +155,16 @@ brew install pandoc
 ```bash
 pandoc --version
 ```
+
+> `pandoc` が見つからない場合、まず現在のシェルに Homebrew の環境を反映する (特に Apple Silicon は `/opt/homebrew/bin` が既存シェルの PATH に無い)。
+>
+> ```bash
+> if [ -x /opt/homebrew/bin/brew ]; then eval "$(/opt/homebrew/bin/brew shellenv)"; \
+> elif [ -x /usr/local/bin/brew ]; then eval "$(/usr/local/bin/brew shellenv)"; fi
+> pandoc --version
+> ```
+>
+> 恒久的に反映するには、`brew` が案内する `eval "$(... brew shellenv)"` の行を shell プロファイル (`~/.zprofile` など) に追記する。IDE 内ターミナル使用時は IDE 自体の再起動が必要なことがある。
 
 ### Windows: git
 
@@ -189,6 +245,7 @@ rclone config
 - **このファイルに記載のないパッケージを追加で提案しない**: pandoc / git / rclone 以外のインストール提案 (LaTeX, Node, Python など) は不要
 - **管理者権限が必要な操作は明示する**: `sudo` や「管理者として実行」が必要なら、その旨を一言添える
 - **インストールコマンドは自動実行しない**: `winget install ...` / `brew install ...` などのインストール系はユーザーに提示するだけにとどめ、`pandoc --version` のような **確認系コマンド** のみ実行する
+- **PATH 再読込・既知パス探索は確認系として AI が実行してよい**: 現セッションの PATH 再読込ワンライナー (Windows の `$env:Path = ...` / macOS の `eval "$(... brew shellenv)"`)、既知インストール先の `Test-Path` 探索、フルパスでの `... --version` 実行は、いずれもインストールや設定変更を伴わない確認系なので AI が実行してよい。ただし shell プロファイルへの追記など**恒久的な設定変更は提示のみ**にとどめる
 - **`rclone config create gdrive drive scope=drive` は AI が実行してよい**: 非対話の一発コマンドであり、参加者のターミナル操作を省略するために使う。**対話モードの `rclone config` (11 ステップのプロンプト) は AI が実行しない** (途中で停止すると復旧が面倒なため)
 - **rclone OAuth のブラウザ承認は参加者必須**: 上記コマンドが rclone から自動でブラウザを開くが、Google アカウントでの「許可」クリック自体は AI が代行できない
 - **rclone のクォータ/Client ID 自作 (パターンB) はこのファイルでは扱わない**: 質問されたら `rclone_advanced.md` を案内する
