@@ -8,7 +8,7 @@ csl: styles/american-medical-association.csl
 
 # Background
 
-Clinical epidemiology projects often require repeated rewriting of the same core ideas for protocols, abstracts, manuscripts, and responses to reviewers. Large language models can support this process, but uncontrolled use may introduce fabricated citations or wording that overstates the evidence. Reporting guidelines such as PRISMA and STROBE remain useful anchors when researchers use AI during drafting [@page2021prisma; @vonelm2007strobe].
+Clinical epidemiology projects often require the same core ideas to be rewritten across protocols, abstracts, manuscripts, and responses to reviewers. Large language models may support this drafting process, but unstructured use can introduce fabricated citations or wording that overstates the evidence. Reporting guidelines, including PRISMA and STROBE, can provide practical anchors for maintaining accuracy and transparency when AI is used during manuscript preparation [@page2021prisma; @vonelm2007strobe].
 
 # Objective
 
