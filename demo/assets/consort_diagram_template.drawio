@@ -1,0 +1,86 @@
+<mxfile host="65bd71144e">
+    <diagram name="CONSORT diagram template" id="0">
+        <mxGraphModel dx="1500" dy="364" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="CONSORT Flow Diagram Template" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=22;fontStyle=1;fontColor=#111827;" parent="1" vertex="1">
+                    <mxGeometry x="300" y="30" width="560" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="phase_enrollment" value="Enrollment" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e5e7eb;strokeColor=#6b7280;strokeWidth=2;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="-40" y="50" width="150" height="170" as="geometry"/>
+                </mxCell>
+                <mxCell id="phase_allocation" value="Allocation" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e5e7eb;strokeColor=#6b7280;strokeWidth=2;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="330" width="150" height="170" as="geometry"/>
+                </mxCell>
+                <mxCell id="phase_follow_up" value="Follow-up" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e5e7eb;strokeColor=#6b7280;strokeWidth=2;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="540" width="150" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="phase_analysis" value="Analysis" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e5e7eb;strokeColor=#6b7280;strokeWidth=2;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="700" width="150" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="assessed" value="Assessed for eligibility&#10;n = [TODO]" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dbeafe;strokeColor=#1d4ed8;strokeWidth=2;" parent="1" vertex="1">
+                    <mxGeometry x="430" y="100" width="280" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="excluded" value="Excluded&#10;n = [TODO]&#10;Not meeting inclusion criteria: n = [TODO]&#10;Declined to participate: n = [TODO]&#10;Other reasons: n = [TODO]" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fee2e2;strokeColor=#b91c1c;strokeWidth=2;align=left;spacingLeft=10;" parent="1" vertex="1">
+                    <mxGeometry x="770" y="100" width="320" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="randomized" value="Randomized&#10;n = [TODO]" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dbeafe;strokeColor=#1d4ed8;strokeWidth=2;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="430" y="250" width="280" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="allocated_intervention" value="Allocated to intervention&#10;n = [TODO]&#10;Received allocated intervention: n = [TODO]&#10;Did not receive allocated intervention: n = [TODO]" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ecfeff;strokeColor=#0891b2;strokeWidth=2;align=left;spacingLeft=10;" parent="1" vertex="1">
+                    <mxGeometry x="250" y="370" width="320" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="allocated_control" value="Allocated to control&#10;n = [TODO]&#10;Received allocated control: n = [TODO]&#10;Did not receive allocated control: n = [TODO]" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ecfeff;strokeColor=#0891b2;strokeWidth=2;align=left;spacingLeft=10;" parent="1" vertex="1">
+                    <mxGeometry x="650" y="370" width="320" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="follow_intervention" value="Lost to follow-up: n = [TODO]&#10;Discontinued intervention: n = [TODO]" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fef3c7;strokeColor=#b45309;strokeWidth=2;align=left;spacingLeft=10;" parent="1" vertex="1">
+                    <mxGeometry x="250" y="540" width="320" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="follow_control" value="Lost to follow-up: n = [TODO]&#10;Discontinued control: n = [TODO]" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fef3c7;strokeColor=#b45309;strokeWidth=2;align=left;spacingLeft=10;" parent="1" vertex="1">
+                    <mxGeometry x="650" y="540" width="320" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="analysis_intervention" value="Analyzed in intervention group&#10;n = [TODO]&#10;Excluded from analysis: n = [TODO]" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dcfce7;strokeColor=#15803d;strokeWidth=2;align=left;spacingLeft=10;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="250" y="690" width="320" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="analysis_control" value="Analyzed in control group&#10;n = [TODO]&#10;Excluded from analysis: n = [TODO]" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dcfce7;strokeColor=#15803d;strokeWidth=2;align=left;spacingLeft=10;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="650" y="690" width="320" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_assessed_randomized" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#334155;strokeWidth=2;endArrow=block;" parent="1" source="assessed" target="randomized" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_assessed_excluded" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#334155;strokeWidth=2;endArrow=block;" parent="1" source="assessed" target="excluded" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_randomized_intervention" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#334155;strokeWidth=2;endArrow=block;" parent="1" source="randomized" target="allocated_intervention" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="410" y="285"/>
+                            <mxPoint x="410" y="350"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_randomized_control" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#334155;strokeWidth=2;endArrow=block;" parent="1" source="randomized" target="allocated_control" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="810" y="285"/>
+                            <mxPoint x="810" y="350"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_alloc_intervention_follow" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#334155;strokeWidth=2;endArrow=block;" parent="1" source="allocated_intervention" target="follow_intervention" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_alloc_control_follow" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#334155;strokeWidth=2;endArrow=block;" parent="1" source="allocated_control" target="follow_control" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_follow_intervention_analysis" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#334155;strokeWidth=2;endArrow=block;" parent="1" source="follow_intervention" target="analysis_intervention" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_follow_control_analysis" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#334155;strokeWidth=2;endArrow=block;" parent="1" source="follow_control" target="analysis_control" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

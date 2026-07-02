@@ -1,0 +1,90 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="PRISMA flow template">
+    <mxGraphModel dx="1200" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="PRISMA Flow Diagram Template" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=22;fontStyle=1;fontColor=#111827;" vertex="1" parent="1">
+          <mxGeometry x="300" y="30" width="560" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="phase_identification" value="Identification" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e5e7eb;strokeColor=#6b7280;strokeWidth=2;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="110" width="160" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="phase_screening" value="Screening" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e5e7eb;strokeColor=#6b7280;strokeWidth=2;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="300" width="160" height="170" as="geometry"/>
+        </mxCell>
+        <mxCell id="phase_included" value="Included" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e5e7eb;strokeColor=#6b7280;strokeWidth=2;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="610" width="160" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="records_db" value="Records identified from databases/registers&#xa;n = [TODO]" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dbeafe;strokeColor=#1d4ed8;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="260" y="100" width="260" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="records_other" value="Records identified from other methods&#xa;n = [TODO]" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dbeafe;strokeColor=#1d4ed8;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="620" y="100" width="260" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="removed_before_screening" value="Records removed before screening&#xa;Duplicate records removed: n = [TODO]&#xa;Marked ineligible by automation tools: n = [TODO]&#xa;Removed for other reasons: n = [TODO]" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fee2e2;strokeColor=#b91c1c;strokeWidth=2;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="620" y="210" width="320" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="records_screened" value="Records screened&#xa;n = [TODO]" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dbeafe;strokeColor=#1d4ed8;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="260" y="240" width="260" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="records_excluded" value="Records excluded&#xa;n = [TODO]" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fee2e2;strokeColor=#b91c1c;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="620" y="350" width="260" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="reports_sought" value="Reports sought for retrieval&#xa;n = [TODO]" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dbeafe;strokeColor=#1d4ed8;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="260" y="350" width="260" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="reports_not_retrieved" value="Reports not retrieved&#xa;n = [TODO]" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fee2e2;strokeColor=#b91c1c;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="620" y="460" width="260" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="reports_assessed" value="Reports assessed for eligibility&#xa;n = [TODO]" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dbeafe;strokeColor=#1d4ed8;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="260" y="460" width="260" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="reports_excluded" value="Reports excluded with reasons&#xa;Reason 1: n = [TODO]&#xa;Reason 2: n = [TODO]&#xa;Reason 3: n = [TODO]" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fee2e2;strokeColor=#b91c1c;strokeWidth=2;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="620" y="570" width="320" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="studies_included" value="Studies included in review&#xa;n = [TODO]" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dcfce7;strokeColor=#15803d;strokeWidth=2;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="260" y="610" width="260" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="reports_included" value="Reports of included studies&#xa;n = [TODO]" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dcfce7;strokeColor=#15803d;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="260" y="700" width="260" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_db_to_screened" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#334155;strokeWidth=2;endArrow=block;" edge="1" parent="1" source="records_db" target="records_screened">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_other_to_screened" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#334155;strokeWidth=2;endArrow=block;" edge="1" parent="1" source="records_other" target="records_screened">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_removed" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#334155;strokeWidth=2;endArrow=block;" edge="1" parent="1" source="records_screened" target="removed_before_screening">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="560" y="275"/>
+              <mxPoint x="560" y="265"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_screened_to_sought" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#334155;strokeWidth=2;endArrow=block;" edge="1" parent="1" source="records_screened" target="reports_sought">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_screened_to_excluded" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#334155;strokeWidth=2;endArrow=block;" edge="1" parent="1" source="records_screened" target="records_excluded">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_sought_to_assessed" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#334155;strokeWidth=2;endArrow=block;" edge="1" parent="1" source="reports_sought" target="reports_assessed">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_sought_to_not_retrieved" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#334155;strokeWidth=2;endArrow=block;" edge="1" parent="1" source="reports_sought" target="reports_not_retrieved">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_assessed_to_included" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#334155;strokeWidth=2;endArrow=block;" edge="1" parent="1" source="reports_assessed" target="studies_included">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_assessed_to_excluded" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#334155;strokeWidth=2;endArrow=block;" edge="1" parent="1" source="reports_assessed" target="reports_excluded">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_included_to_reports" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#334155;strokeWidth=2;endArrow=block;" edge="1" parent="1" source="studies_included" target="reports_included">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
